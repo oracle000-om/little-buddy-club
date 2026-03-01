@@ -6,7 +6,7 @@
  * to scope results to puppies, young animals, and confiscation cases.
  */
 import { prisma } from './db';
-import type { AnimalWithShelter, AnimalWithShelterAndSources, ShelterWithAnimals, BreederInspection, StatePolicy } from './types';
+import type { AnimalWithShelter, AnimalWithShelterAndSources, ShelterWithAnimals, MillWatchStateStats, StatePolicy, ResearchFacilityStateStats, ShelterIntakeStats, ConfiscationEvent, HousingPressure } from './types';
 import { parseSearchQuery, type SearchIntent } from './search-parser';
 import { geocodeZip, geocodeZipFull, geocodeCounty, haversineDistance } from './geocode';
 import { zipToState } from './zip-to-state';
@@ -84,7 +84,9 @@ export async function getFilteredAnimals(filters: AnimalFilters): Promise<Pagina
     // LBC-specific: rescue type filter
     if (filters.rescue && filters.rescue !== 'all') {
         if (filters.rescue === 'mill') {
-            (where.AND as Record<string, unknown>[]).push({ intakeReason: 'CONFISCATE' });
+            (where.AND as Record<string, unknown>[]).push({
+                intakeReason: 'CONFISCATE',
+            });
         } else if (filters.rescue === 'stray') {
             (where.AND as Record<string, unknown>[]).push({ intakeReason: 'STRAY' });
         } else if (filters.rescue === 'surrender') {
@@ -520,21 +522,84 @@ export async function getDistinctStates(): Promise<string[]> {
         .sort();
 }
 
-// ─── Mill Watch Queries ──────────────────────────────────
+// ─── Mill Watch Queries (Aggregate Only — No PII) ────────
 
-/** Fetch breeder inspections, optionally filtered by state. */
+/** Shape returned by breeder inspection queries. */
+export interface BreederInspection {
+    id: string;
+    certNumber: string;
+    licenseType: string;
+    legalName: string;
+    siteName: string | null;
+    city: string | null;
+    state: string;
+    zipCode: string | null;
+    inspectionDate: Date;
+    inspectionType: string | null;
+    criticalViolations: number;
+    nonCritical: number;
+    animalCount: number | null;
+    latitude: number | null;
+    longitude: number | null;
+    lastScrapedAt: Date;
+}
+
+/** Fetch breeder inspections with optional state filter. */
 export async function getBreederInspections(state?: string): Promise<BreederInspection[]> {
     // eslint-disable-next-line @typescript-eslint/no-explicit-any
     const where: any = {};
     if (state && state !== 'all') {
         where.state = { equals: state, mode: 'insensitive' };
     }
-
     return prisma.breederInspection.findMany({
         where,
         orderBy: { inspectionDate: 'desc' },
         take: 100,
     }) as Promise<BreederInspection[]>;
+}
+
+/** Fetch aggregate state-level stats from breeder inspections. No individual PII. */
+export async function getMillWatchStats(): Promise<MillWatchStateStats[]> {
+    const rows: {
+        state: string;
+        total_inspections: bigint; total_critical: bigint; total_non_critical: bigint;
+        total_animals: bigint; total_facilities: bigint; facilities_with_violations: bigint;
+        breeder_facilities: bigint; dealer_facilities: bigint;
+        breeder_critical: bigint; dealer_critical: bigint;
+    }[] = await prisma.$queryRaw`
+            SELECT
+                state,
+                COUNT(*)::bigint AS total_inspections,
+                COALESCE(SUM(critical_violations), 0)::bigint AS total_critical,
+                COALESCE(SUM(non_critical), 0)::bigint AS total_non_critical,
+                COALESCE(SUM(animal_count), 0)::bigint AS total_animals,
+                COUNT(DISTINCT cert_number)::bigint AS total_facilities,
+                COUNT(DISTINCT CASE WHEN critical_violations > 0 OR non_critical > 0 THEN cert_number END)::bigint AS facilities_with_violations,
+                COUNT(DISTINCT CASE WHEN license_type = 'A' THEN cert_number END)::bigint AS breeder_facilities,
+                COUNT(DISTINCT CASE WHEN license_type = 'B' THEN cert_number END)::bigint AS dealer_facilities,
+                COALESCE(SUM(CASE WHEN license_type = 'A' THEN critical_violations ELSE 0 END), 0)::bigint AS breeder_critical,
+                COALESCE(SUM(CASE WHEN license_type = 'B' THEN critical_violations ELSE 0 END), 0)::bigint AS dealer_critical
+            FROM breeder_inspections
+            GROUP BY state
+            ORDER BY total_critical DESC
+        `;
+
+    return rows.map(r => ({
+        state: r.state,
+        totalInspections: Number(r.total_inspections),
+        totalCritical: Number(r.total_critical),
+        totalNonCritical: Number(r.total_non_critical),
+        totalAnimals: Number(r.total_animals),
+        totalFacilities: Number(r.total_facilities),
+        facilitiesWithViolations: Number(r.facilities_with_violations),
+        avgAnimalsPerFacility: Number(r.total_facilities) > 0
+            ? Math.round(Number(r.total_animals) / Number(r.total_facilities))
+            : 0,
+        breederFacilities: Number(r.breeder_facilities),
+        dealerFacilities: Number(r.dealer_facilities),
+        breederCritical: Number(r.breeder_critical),
+        dealerCritical: Number(r.dealer_critical),
+    }));
 }
 
 /** Fetch all state policies. */
@@ -552,4 +617,203 @@ export async function getInspectionStates(): Promise<string[]> {
         orderBy: { state: 'asc' },
     });
     return inspections.map(i => i.state);
+}
+
+// ─── Breeder Directory ───────────────────────────────────
+
+export interface BreederProfile {
+    certNumber: string;
+    legalName: string;
+    licenseType: string;
+    city: string | null;
+    state: string;
+    zipCode: string | null;
+    latitude: number | null;
+    longitude: number | null;
+    totalInspections: number;
+    totalCritical: number;
+    totalNonCritical: number;
+    totalAnimals: number | null;
+    violationScore: number;
+    lastInspectionDate: Date;
+    firstInspectionDate: Date;
+}
+
+/** Fetch breeder profiles grouped by certNumber, optionally filtered. */
+export async function getBreederDirectory(filters?: {
+    state?: string;
+    violationsOnly?: boolean;
+    sort?: 'violations' | 'animals' | 'recent';
+}): Promise<BreederProfile[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
+    if (filters?.state && filters.state !== 'all') {
+        where.state = { equals: filters.state, mode: 'insensitive' };
+    }
+
+    const inspections = await prisma.breederInspection.findMany({
+        where,
+        orderBy: { inspectionDate: 'desc' },
+    }) as BreederInspection[];
+
+    const breederMap = new Map<string, BreederProfile>();
+    for (const insp of inspections) {
+        const existing = breederMap.get(insp.certNumber);
+        if (existing) {
+            existing.totalInspections++;
+            existing.totalCritical += insp.criticalViolations;
+            existing.totalNonCritical += insp.nonCritical;
+            if (insp.animalCount) {
+                existing.totalAnimals = Math.max(existing.totalAnimals || 0, insp.animalCount);
+            }
+            existing.violationScore = existing.totalCritical * 3 + existing.totalNonCritical;
+            if (insp.inspectionDate > existing.lastInspectionDate) {
+                existing.lastInspectionDate = insp.inspectionDate;
+            }
+            if (insp.inspectionDate < existing.firstInspectionDate) {
+                existing.firstInspectionDate = insp.inspectionDate;
+            }
+        } else {
+            breederMap.set(insp.certNumber, {
+                certNumber: insp.certNumber,
+                legalName: insp.legalName,
+                licenseType: insp.licenseType,
+                city: insp.city,
+                state: insp.state,
+                zipCode: insp.zipCode,
+                latitude: insp.latitude,
+                longitude: insp.longitude,
+                totalInspections: 1,
+                totalCritical: insp.criticalViolations,
+                totalNonCritical: insp.nonCritical,
+                totalAnimals: insp.animalCount,
+                violationScore: insp.criticalViolations * 3 + insp.nonCritical,
+                lastInspectionDate: insp.inspectionDate,
+                firstInspectionDate: insp.inspectionDate,
+            });
+        }
+    }
+
+    let breeders = Array.from(breederMap.values());
+
+    if (filters?.violationsOnly) {
+        breeders = breeders.filter(b => b.violationScore > 0);
+    }
+
+    const sort = filters?.sort || 'violations';
+    if (sort === 'violations') {
+        breeders.sort((a, b) => b.violationScore - a.violationScore);
+    } else if (sort === 'animals') {
+        breeders.sort((a, b) => (b.totalAnimals || 0) - (a.totalAnimals || 0));
+    } else if (sort === 'recent') {
+        breeders.sort((a, b) => b.lastInspectionDate.getTime() - a.lastInspectionDate.getTime());
+    }
+
+    return breeders;
+}
+
+/** Find breeders near a given coordinate (for proximity panel on detail page). */
+export async function getNearbyBreeders(
+    lat: number,
+    lng: number,
+    radiusMiles: number = 50,
+    limit: number = 5,
+): Promise<(BreederProfile & { distanceMiles: number })[]> {
+    const allBreeders = await getBreederDirectory({ violationsOnly: true });
+
+    return allBreeders
+        .filter(b => b.latitude != null && b.longitude != null)
+        .map(b => ({
+            ...b,
+            distanceMiles: haversineDistance(lat, lng, b.latitude!, b.longitude!),
+        }))
+        .filter(b => b.distanceMiles <= radiusMiles)
+        .sort((a, b) => a.distanceMiles - b.distanceMiles)
+        .slice(0, limit);
+}
+
+// ─── Expanded Data Source Queries ─────────────────────────
+
+/** Aggregate research facility stats by state (no PII — facility-level only). */
+export async function getResearchFacilityStats(): Promise<ResearchFacilityStateStats[]> {
+    const rows: {
+        state: string;
+        total_facilities: bigint;
+        total_dogs: bigint;
+        total_cats: bigint;
+        total_pain_d: bigint;
+    }[] = await prisma.$queryRaw`
+        SELECT
+            state,
+            COUNT(DISTINCT cert_number)::bigint AS total_facilities,
+            COALESCE(SUM(total_dogs), 0)::bigint AS total_dogs,
+            COALESCE(SUM(total_cats), 0)::bigint AS total_cats,
+            COALESCE(SUM(pain_category_d), 0)::bigint AS total_pain_d
+        FROM research_facilities
+        GROUP BY state
+        ORDER BY total_dogs DESC
+    `;
+
+    return rows.map(r => ({
+        state: r.state,
+        totalFacilities: Number(r.total_facilities),
+        totalDogs: Number(r.total_dogs),
+        totalCats: Number(r.total_cats),
+        totalPainD: Number(r.total_pain_d),
+    }));
+}
+
+/** Fetch shelter intake trends by state, most recent data. */
+export async function getShelterIntakeTrends(state?: string): Promise<ShelterIntakeStats[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
+    if (state && state !== 'all') {
+        where.state = { equals: state, mode: 'insensitive' };
+    }
+
+    return prisma.shelterIntakeStats.findMany({
+        where,
+        orderBy: [{ year: 'desc' }, { month: 'desc' }],
+        take: 200,
+    }) as Promise<ShelterIntakeStats[]>;
+}
+
+/** Fetch recent confiscation events, optionally filtered by state. */
+export async function getConfiscationEvents(state?: string, limit = 50): Promise<ConfiscationEvent[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {};
+    if (state && state !== 'all') {
+        where.state = { equals: state, mode: 'insensitive' };
+    }
+
+    return prisma.confiscationEvent.findMany({
+        where,
+        orderBy: { date: 'desc' },
+        take: limit,
+    }) as Promise<ConfiscationEvent[]>;
+}
+
+/** Fetch housing pressure hotspots — counties with highest rent increases. */
+export async function getHousingPressureHotspots(state?: string, limit = 50): Promise<HousingPressure[]> {
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const where: any = {
+        rentChangeYoY: { not: null },
+    };
+    if (state && state !== 'all') {
+        where.state = { equals: state, mode: 'insensitive' };
+    }
+
+    return prisma.housingPressure.findMany({
+        where,
+        orderBy: { rentChangeYoY: 'desc' },
+        take: limit,
+    }) as Promise<HousingPressure[]>;
+}
+
+/** Fetch states with Beagle Bills (lab animal adoption mandates). */
+export async function getBeagleBillStates(): Promise<StatePolicy[]> {
+    return prisma.statePolicy.findMany({
+        where: { beagleBill: true },
+        orderBy: { state: 'asc' },
+    }) as Promise<StatePolicy[]>;
 }
