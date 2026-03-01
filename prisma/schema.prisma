@@ -1,0 +1,762 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Shelter {
+  id                 String      @id @default(uuid())
+  name               String
+  county             String
+  state              String
+  shelterType        ShelterType @default(MUNICIPAL) @map("shelter_type")
+  address            String?
+  zipCode            String?  @map("zip_code")
+  phone              String?
+  websiteUrl         String?  @map("website_url")
+  facebookUrl        String?  @map("facebook_url")
+  totalIntakeAnnual     Int      @default(0) @map("total_intake_annual")
+  totalEuthanizedAnnual Int      @default(0) @map("total_euthanized_annual")
+  dataYear              Int?     @map("data_year")
+  dataSourceName        String?  @map("data_source_name")
+  dataSourceUrl         String?  @map("data_source_url")
+  countyPopulation        Int?     @map("county_population")
+  totalReturnedToOwner    Int?     @map("total_returned_to_owner")
+  totalTransferred        Int?     @map("total_transferred")
+  priorYearIntake         Int?     @map("prior_year_intake")
+  priorYearEuthanized     Int?     @map("prior_year_euthanized")
+  priorDataYear           Int?     @map("prior_data_year")
+  latitude              Float?
+  longitude             Float?
+  // ── v8: Derived metrics (computed, not scraped) ──
+  liveReleaseRate       Float?      @map("live_release_rate")       // (intake - euthanized) / intake, 0.0–1.0
+  perCapitaIntake       Float?      @map("per_capita_intake")       // intake per 1,000 residents
+  transferRate          Float?      @map("transfer_rate")           // transferred / intake, 0.0–1.0
+  returnToOwnerRate     Float?      @map("return_to_owner_rate")    // RTO / intake, 0.0–1.0
+  intakeTrendPct        Float?      @map("intake_trend_pct")        // (current - prior) / prior, e.g. -0.12 = 12% decrease
+  medianDaysToOutcome   Int?        @map("median_days_to_outcome")  // median days animals stay
+  seniorCount           Int?        @map("senior_count")            // count of senior animals at this shelter
+  // ── v9: Best Friends + BLS enrichment ──
+  bestFriendsSaveRate   Float?      @map("best_friends_save_rate")   // 0.0–1.0 from Best Friends dashboard
+  noKillStatus          String?     @map("no_kill_status")           // YES, NEARLY, NO
+  bestFriendsDataYear   Int?        @map("best_friends_data_year")
+  vetDensityPer10k      Float?      @map("vet_density_per_10k")     // vets per 10K residents (BLS OEWS)
+  metroAvgVetSalary     Int?        @map("metro_avg_vet_salary")    // mean annual vet wage in this metro
+  metroName             String?     @map("metro_name")              // BLS metro area name
+  dataSourceAdapter     String?     @map("data_source_adapter")     // which adapter last wrote (petango, rescuegroups, etc.)
+  lastScrapedAt         DateTime? @map("last_scraped_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  animals Animal[]
+  financials ShelterFinancials?
+
+  @@map("shelters")
+}
+
+enum ShelterType {
+  MUNICIPAL
+  RESCUE
+  NO_KILL
+  FOSTER_BASED
+  SANCTUARY
+}
+
+model Animal {
+  id                    String      @id @default(uuid())
+  shelterId             String      @map("shelter_id")
+  intakeId              String?     @map("intake_id")
+  name                  String?
+  species               Species     @default(DOG)
+  breed                 String?
+  sex                   Sex?
+  size                  AnimalSize?
+  photoUrl              String?     @map("photo_url")
+  photoHash             String?     @map("photo_hash")
+  photoUrls             String[]    @default([]) @map("photo_urls")
+  videoUrl              String?     @map("video_url")
+  status                AnimalStatus @default(AVAILABLE)
+  ageKnownYears         Int?        @map("age_known_years")
+  ageEstimatedLow       Int?        @map("age_estimated_low")
+  ageEstimatedHigh      Int?        @map("age_estimated_high")
+  ageConfidence         AgeConfidence @default(NONE) @map("age_confidence")
+  ageIndicators         String[]    @default([]) @map("age_indicators")
+  ageSource             AgeSource   @default(UNKNOWN) @map("age_source")
+  ageSegment            AgeSegment  @default(UNKNOWN) @map("age_segment")
+  detectedBreeds        String[]    @default([]) @map("detected_breeds")
+  breedConfidence       AgeConfidence @default(NONE) @map("breed_confidence")
+  lifeExpectancyLow     Int?        @map("life_expectancy_low")
+  lifeExpectancyHigh    Int?        @map("life_expectancy_high")
+
+  // ── v2: Health assessment ──
+  bodyConditionScore    Int?        @map("body_condition_score")
+  coatCondition         String?     @map("coat_condition")
+  visibleConditions     String[]    @default([]) @map("visible_conditions")
+  healthNotes           String?     @map("health_notes")
+
+  // ── v2: Behavioral signals ──
+  aggressionRisk        Int?        @map("aggression_risk")
+  fearIndicators        String[]    @default([]) @map("fear_indicators")
+  stressLevel           String?     @map("stress_level")
+  behaviorNotes         String?     @map("behavior_notes")
+
+  // ── v2: Photo quality ──
+  photoQuality          String?     @map("photo_quality")
+
+  // ── v2: Veterinary care guidance ──
+  likelyCareNeeds       String[]    @default([]) @map("likely_care_needs")
+  estimatedCareLevel    String?     @map("estimated_care_level")
+
+  // ── v3: Cross-validation ──
+  dataConflicts         String[]    @default([]) @map("data_conflicts")
+
+  // ── v5: Dental & eye close-up assessment ──
+  dentalGrade           Int?        @map("dental_grade")
+  tartarSeverity        String?     @map("tartar_severity")
+  dentalNotes           String?     @map("dental_notes")
+  cataractStage         String?     @map("cataract_stage")
+  eyeNotes              String?     @map("eye_notes")
+
+  // ── v8: Physical assessment from CV ──
+  estimatedWeightLbs    Int?        @map("estimated_weight_lbs")
+  mobilityAssessment    String?     @map("mobility_assessment")  // normal, limited, impaired
+  mobilityNotes         String?     @map("mobility_notes")
+  energyLevel           String?     @map("energy_level")          // low, moderate, high
+  groomingNeeds         String?     @map("grooming_needs")        // minimal, regular, extensive
+
+  // ── v6: Structured behavioral data ──
+  houseTrained          Boolean?    @map("house_trained")
+  goodWithCats          Boolean?    @map("good_with_cats")
+  goodWithDogs          Boolean?    @map("good_with_dogs")
+  goodWithChildren      Boolean?    @map("good_with_children")
+  specialNeeds          Boolean?    @map("special_needs")
+
+  // ── v6: Coat & appearance ──
+  coatType              String?     @map("coat_type")       // e.g., "Short", "Long", "Wire"
+  coatColors            String[]    @default([]) @map("coat_colors")  // e.g., ["Black", "White"]
+
+  // ── v6: Description & environment ──
+  description           String?                              // Full bio/description text
+  environmentNeeds      String[]    @default([]) @map("environment_needs") // e.g., ["No cats", "Fenced yard"]
+
+  // ── v7: Medical status ──
+  isAltered             Boolean?    @map("is_altered")        // Spayed/neutered
+  isMicrochipped        Boolean?    @map("is_microchipped")
+  isVaccinated          Boolean?    @map("is_vaccinated")     // Current on vaccinations
+
+  // ── v7: Adoption & listing ──
+  adoptionFee           String?     @map("adoption_fee")      // e.g., "$150", "Waived"
+  listingUrl            String?     @map("listing_url")       // Direct URL to original listing
+  isCourtesyListing     Boolean?    @map("is_courtesy_listing") // Not at this shelter
+
+  // ── v7: Physical details ──
+  weight                String?                               // e.g., "55 lbs", "Large (60-99)"
+  birthday              DateTime?                             // Exact or estimated birthdate
+  coatPattern           String?     @map("coat_pattern")      // e.g., "Tabby", "Tuxedo", "Brindle"
+  isMixed               Boolean?    @map("is_mixed")          // Mixed breed flag
+
+  // ── v7: Location / foster ──
+  isFosterHome          Boolean?    @map("is_foster_home")    // Currently in foster (not at shelter)
+
+  intakeReason          IntakeReason @default(UNKNOWN) @map("intake_reason")
+  intakeReasonDetail    String?     @map("intake_reason_detail")
+  notes                 String?
+  intakeDate            DateTime?   @map("intake_date")
+  euthScheduledAt       DateTime?   @map("euth_scheduled_at")
+
+  // ── v2: Temporal tracking ──
+  firstSeenAt           DateTime?   @map("first_seen_at")
+  lastSeenAt            DateTime?   @map("last_seen_at")
+  daysInShelter         Int?        @map("days_in_shelter")
+
+  // ── v3: Status lifecycle ──
+  delistedAt            DateTime?   @map("delisted_at")
+  shelterEntryCount     Int         @default(1) @map("shelter_entry_count")
+
+  // ── v10: Listing protection (ultra-conservative reconciliation) ──
+  consecutiveMisses     Int         @default(0) @map("consecutive_misses")
+  staleSince            DateTime?   @map("stale_since")
+  outcomeDate           DateTime?   @map("outcome_date")
+  outcomeNotes          String?     @map("outcome_notes")
+
+  // ── v8: Derived / computed fields ──
+  adoptionUrgency       String?     @map("adoption_urgency")       // LOW, MODERATE, HIGH, CRITICAL
+  adoptionReadiness     String?     @map("adoption_readiness")     // GREAT, GOOD, NEEDS_WORK, CHALLENGING
+  breedHealthRisk       Int?        @map("breed_health_risk")      // 1-10 from BreedProfile
+  breedCommonConditions String[]    @default([]) @map("breed_common_conditions")
+  estimatedAnnualCost   String?     @map("estimated_annual_cost")  // e.g. "$800–$1,200"
+
+  createdAt             DateTime    @default(now()) @map("created_at")
+  updatedAt             DateTime    @updatedAt @map("updated_at")
+
+  shelter    Shelter            @relation(fields: [shelterId], references: [id])
+  sources    Source[]
+  snapshots  AnimalSnapshot[]
+  assessment AnimalAssessment?
+  enrichment AnimalEnrichment?
+  listing    AnimalListing?
+
+  @@index([photoHash])
+  @@index([shelterId, status])
+  @@index([status])
+  @@index([status, species])
+  @@index([status, createdAt])
+  @@index([shelterId, intakeId])
+  @@map("animals")
+}
+
+// ── AnimalAssessment: CV pipeline data (1:1 optional) ──
+model AnimalAssessment {
+  id                    String    @id @default(uuid())
+  animalId              String    @unique @map("animal_id")
+
+  // Age estimation
+  ageEstimatedLow       Int?      @map("age_estimated_low")
+  ageEstimatedHigh      Int?      @map("age_estimated_high")
+  ageConfidence         AgeConfidence @default(NONE) @map("age_confidence")
+  ageIndicators         String[]  @default([]) @map("age_indicators")
+
+  // Breed detection
+  detectedBreeds        String[]  @default([]) @map("detected_breeds")
+  breedConfidence       AgeConfidence @default(NONE) @map("breed_confidence")
+  lifeExpectancyLow     Int?      @map("life_expectancy_low")
+  lifeExpectancyHigh    Int?      @map("life_expectancy_high")
+
+  // Health assessment
+  bodyConditionScore    Int?      @map("body_condition_score")
+  coatCondition         String?   @map("coat_condition")
+  visibleConditions     String[]  @default([]) @map("visible_conditions")
+  healthNotes           String?   @map("health_notes")
+
+  // Behavioral signals
+  aggressionRisk        Int?      @map("aggression_risk")
+  fearIndicators        String[]  @default([]) @map("fear_indicators")
+  stressLevel           String?   @map("stress_level")
+  behaviorNotes         String?   @map("behavior_notes")
+
+  // Photo quality
+  photoQuality          String?   @map("photo_quality")
+
+  // Care guidance
+  likelyCareNeeds       String[]  @default([]) @map("likely_care_needs")
+  estimatedCareLevel    String?   @map("estimated_care_level")
+
+  // Cross-validation
+  dataConflicts         String[]  @default([]) @map("data_conflicts")
+
+  // Dental & eye
+  dentalGrade           Int?      @map("dental_grade")
+  tartarSeverity        String?   @map("tartar_severity")
+  dentalNotes           String?   @map("dental_notes")
+  cataractStage         String?   @map("cataract_stage")
+  eyeNotes              String?   @map("eye_notes")
+
+  // Physical assessment
+  estimatedWeightLbs    Int?      @map("estimated_weight_lbs")
+  mobilityAssessment    String?   @map("mobility_assessment")
+  mobilityNotes         String?   @map("mobility_notes")
+  energyLevel           String?   @map("energy_level")
+  groomingNeeds         String?   @map("grooming_needs")
+
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("animal_assessments")
+}
+
+// ── AnimalEnrichment: computed/derived scores (1:1 optional) ──
+model AnimalEnrichment {
+  id                    String    @id @default(uuid())
+  animalId              String    @unique @map("animal_id")
+
+  adoptionUrgency       String?   @map("adoption_urgency")
+  adoptionReadiness     String?   @map("adoption_readiness")
+  breedHealthRisk       Int?      @map("breed_health_risk")
+  breedCommonConditions String[]  @default([]) @map("breed_common_conditions")
+  estimatedAnnualCost   String?   @map("estimated_annual_cost")
+
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("animal_enrichments")
+}
+
+// ── AnimalListing: rich listing detail from shelter APIs (1:1 optional) ──
+model AnimalListing {
+  id                    String    @id @default(uuid())
+  animalId              String    @unique @map("animal_id")
+
+  // Behavioral
+  houseTrained          Boolean?  @map("house_trained")
+  goodWithCats          Boolean?  @map("good_with_cats")
+  goodWithDogs          Boolean?  @map("good_with_dogs")
+  goodWithChildren      Boolean?  @map("good_with_children")
+  specialNeeds          Boolean?  @map("special_needs")
+
+  // Description & environment
+  description           String?
+  environmentNeeds      String[]  @default([]) @map("environment_needs")
+
+  // Coat & appearance
+  coatType              String?   @map("coat_type")
+  coatColors            String[]  @default([]) @map("coat_colors")
+  coatPattern           String?   @map("coat_pattern")
+  isMixed               Boolean?  @map("is_mixed")
+
+  // Medical status
+  isAltered             Boolean?  @map("is_altered")
+  isMicrochipped        Boolean?  @map("is_microchipped")
+  isVaccinated          Boolean?  @map("is_vaccinated")
+
+  // Adoption & listing
+  adoptionFee           String?   @map("adoption_fee")
+  listingUrl            String?   @map("listing_url")
+  isCourtesyListing     Boolean?  @map("is_courtesy_listing")
+
+  // Physical details
+  weight                String?
+  birthday              DateTime?
+  isFosterHome          Boolean?  @map("is_foster_home")
+
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  animal Animal @relation(fields: [animalId], references: [id], onDelete: Cascade)
+
+  @@map("animal_listings")
+}
+
+model Source {
+  id         String     @id @default(uuid())
+  animalId   String     @map("animal_id")
+  sourceType SourceType @map("source_type")
+  sourceUrl  String     @map("source_url")
+  scrapedAt  DateTime   @default(now()) @map("scraped_at")
+
+  animal Animal @relation(fields: [animalId], references: [id])
+
+  @@map("sources")
+}
+
+enum Species {
+  DOG
+  CAT
+  OTHER
+}
+
+enum Sex {
+  MALE
+  FEMALE
+  UNKNOWN
+}
+
+enum AgeSegment {
+  PUPPY
+  YOUNG
+  ADULT
+  SENIOR
+  UNKNOWN
+}
+
+enum AnimalSize {
+  SMALL
+  MEDIUM
+  LARGE
+  XLARGE
+}
+
+enum AnimalStatus {
+  AVAILABLE
+  URGENT
+  STALE
+  RESCUE_PULL
+  ADOPTED
+  TRANSFERRED
+  RETURNED_OWNER
+  EUTHANIZED
+  DELISTED
+}
+
+enum AgeSource {
+  SHELTER_REPORTED
+  CV_ESTIMATED
+  UNKNOWN
+}
+
+enum AgeConfidence {
+  HIGH
+  MEDIUM
+  LOW
+  NONE
+}
+
+enum IntakeReason {
+  OWNER_SURRENDER
+  STRAY
+  OWNER_DECEASED
+  CONFISCATE
+  RETURN
+  TRANSFER
+  INJURED
+  OTHER
+  UNKNOWN
+}
+
+enum SourceType {
+  SHELTER_WEBSITE
+  FACEBOOK_CROSSPOST
+  MANUAL_ENTRY
+  OTHER
+}
+
+model AnimalSnapshot {
+  id                String       @id @default(uuid())
+  animalId          String       @map("animal_id")
+  scrapedAt         DateTime     @default(now()) @map("scraped_at")
+  listingSource     String       @map("listing_source")
+
+  // ── Listing state (what changes over time) ──
+  status            AnimalStatus
+  name              String?
+  photoUrl          String?      @map("photo_url")
+  notes             String?
+  euthScheduledAt   DateTime?    @map("euth_scheduled_at")
+
+  // ── CV assessment at this moment ──
+  bodyConditionScore  Int?       @map("body_condition_score")
+  coatCondition       String?    @map("coat_condition")
+  aggressionRisk      Int?       @map("aggression_risk")
+  stressLevel         String?    @map("stress_level")
+  photoQuality        String?    @map("photo_quality")
+
+  // ── Raw data (future-proofing) ──
+  rawAssessment     Json?        @map("raw_assessment")
+  rawSourceData     Json?        @map("raw_source_data")
+
+  animal Animal @relation(fields: [animalId], references: [id])
+
+  @@index([animalId, scrapedAt])
+  @@map("animal_snapshots")
+}
+
+model Poll {
+  id              String     @id @default(uuid())
+  slug            String     @unique
+  title           String     @default("")
+  statement       String
+  seniorNote      String?    @map("senior_note")
+  forTitle        String     @map("for_title")
+  forArgument     String     @map("for_argument")
+  againstTitle    String     @map("against_title")
+  againstArgument String     @map("against_argument")
+  neitherTitle    String     @default("It's not that simple") @map("neither_title")
+  neitherPrompt   String     @default("Here's what needs to change:") @map("neither_prompt")
+  active          Boolean    @default(true)
+  sortOrder       Int        @default(0) @map("sort_order")
+  createdAt       DateTime   @default(now()) @map("created_at")
+
+  votes PollVote[]
+
+  @@map("polls")
+}
+
+model PollVote {
+  id          String     @id @default(uuid())
+  pollId      String     @map("poll_id")
+  choice      VoteChoice
+  neitherText String?    @map("neither_text")
+  voterToken  String     @map("voter_token")
+  createdAt   DateTime   @default(now()) @map("created_at")
+
+  poll Poll @relation(fields: [pollId], references: [id])
+
+  @@unique([pollId, voterToken])
+  @@map("poll_votes")
+}
+
+enum VoteChoice {
+  FOR
+  AGAINST
+  NEITHER
+}
+
+model BreedProfile {
+  id                 String   @id @default(cuid())
+  name               String
+  species            String   // DOG, CAT
+  breedGroup         String?  @map("breed_group")
+  lifeExpectancyLow  Int?     @map("life_expectancy_low")
+  lifeExpectancyHigh Int?     @map("life_expectancy_high")
+  temperament        String?
+  healthRiskScore    Int?     @map("health_risk_score")
+  commonConditions   String[] @default([]) @map("common_conditions")
+  seniorAgeThreshold Int?     @map("senior_age_threshold")
+  careNotes          String?  @map("care_notes")
+  sourceApi          String   @map("source_api")
+  // ── PubMed enrichment ──
+  pubmedConditions    Json?    @map("pubmed_conditions")      // [{condition, prevalence, severity, citations, treatments}]
+  pubmedTreatments    Json?    @map("pubmed_treatments")      // [{condition, treatments: [{name, type, successRate, cost}]}]
+  pubmedDrugSensitivities Json? @map("pubmed_drug_sensitivities") // [{drug, reaction, severity, geneticBasis}]
+  pubmedNutrition     Json?    @map("pubmed_nutrition")        // [{recommendation, rationale, seniorSpecific, citations}]
+  pubmedBehavioral    Json?    @map("pubmed_behavioral")       // [{trait, prevalence, seniorOnset, managementTips}]
+  pubmedMortality     Json?    @map("pubmed_mortality")        // [{condition, medianSurvivalYears, ageOfOnset, mortalityRate}]
+  pubmedDiagnostics   Json?    @map("pubmed_diagnostics")      // [{test, forCondition, recommendedFrequency, seniorRelevant}]
+  pubmedArticleCount  Int?     @map("pubmed_article_count")
+  pubmedLastEnriched  DateTime? @map("pubmed_last_enriched")
+  // ── openFDA adverse event data ──
+  fdaAdverseReactions  Json?    @map("fda_adverse_reactions")   // [{reaction, count}] top VeDDRA reactions
+  fdaDrugWarnings      Json?    @map("fda_drug_warnings")       // [{drug, count, reactions}] top drug events
+  fdaEventCount        Int?     @map("fda_event_count")         // total adverse event reports for this breed
+  fdaLastEnriched      DateTime? @map("fda_last_enriched")
+  // ── Insurance claim data (Nationwide + Trupanion) ──
+  nationwideConditions Json?    @map("nationwide_conditions")   // [{condition, description, costRange, prevention}]
+  trupanionConditions  Json?    @map("trupanion_conditions")    // [{condition, costRange, frequency, lifeStage}]
+  insurerLastEnriched  DateTime? @map("insurer_last_enriched")
+  // ── Computed scores (derived from PubMed + other data) ──
+  healthRiskScoreV2   Float?   @map("health_risk_score_v2")    // Evidence-backed 1-10 score from PubMed conditions
+  estimatedAnnualVetCost Int?  @map("estimated_annual_vet_cost") // Expected annual vet spend in dollars
+  lastFetchedAt      DateTime @default(now()) @map("last_fetched_at")
+  createdAt          DateTime @default(now()) @map("created_at")
+  updatedAt          DateTime @updatedAt @map("updated_at")
+
+  @@unique([name, species])
+  @@map("breed_profiles")
+}
+
+model VetArticle {
+  id            String    @id @default(cuid())
+  pmid          String    @unique               // PubMed ID
+  title         String
+  abstract      String?                          // Full abstract text
+  authors       String[]  @default([])
+  journal       String?
+  pubDate       DateTime? @map("pub_date")
+  meshTerms     String[]  @default([]) @map("mesh_terms")
+  species       String[]  @default([])           // DOG, CAT extracted from MeSH
+  breeds        String[]  @default([])           // Breed names extracted from abstract
+  conditions    String[]  @default([])           // Health conditions extracted by Gemini
+  conditionJson Json?     @map("condition_json") // Structured: [{condition, prevalence, severity, ageOnset}]
+  sourceQuery   String    @map("source_query")   // Search query that found this article
+  lastFetchedAt DateTime  @default(now()) @map("last_fetched_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([species])
+  @@index([breeds])
+  @@map("vet_articles")
+}
+
+model RoadmapVote {
+  id         String   @id @default(uuid())
+  choice     String
+  voterToken String   @unique @map("voter_token")
+  ipAddress  String?  @map("ip_address")
+  createdAt  DateTime @default(now()) @map("created_at")
+
+  @@map("roadmap_votes")
+}
+
+model RateLimitEntry {
+  id        String   @id @default(uuid())
+  ip        String
+  route     String
+  count     Int      @default(1)
+  windowEnd DateTime @map("window_end")
+
+  @@unique([ip, route])
+  @@index([windowEnd])
+  @@map("rate_limit_entries")
+}
+
+model ScrapeFailure {
+  id            String    @id @default(uuid())
+  pipeline      String
+  shelterId     String?   @map("shelter_id")
+  animalIntakeId String?  @map("animal_intake_id")
+  errorMessage  String    @map("error_message")
+  payload       Json?
+  retryCount    Int       @default(0) @map("retry_count")
+  resolvedAt    DateTime? @map("resolved_at")
+  createdAt     DateTime  @default(now()) @map("created_at")
+
+  @@index([pipeline, resolvedAt])
+  @@map("scrape_failures")
+}
+
+model ScrapeRun {
+  id             String    @id @default(uuid())
+  pipeline       String
+  status         RunStatus @default(RUNNING)
+  startedAt      DateTime  @default(now()) @map("started_at")
+  finishedAt     DateTime? @map("finished_at")
+  durationMs     Int?      @map("duration_ms")
+  animalsCreated Int       @default(0) @map("animals_created")
+  animalsUpdated Int       @default(0) @map("animals_updated")
+  errors         Int       @default(0)
+  errorSummary   String?   @map("error_summary")
+  metadata       Json?
+
+  @@index([pipeline, startedAt])
+  @@map("scrape_runs")
+}
+
+enum RunStatus {
+  RUNNING
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+model StatePolicy {
+  id                    String   @id @default(uuid())
+  state                 String   @unique  // 2-letter code (e.g., "TX")
+  stateName             String   @map("state_name")   // Full name (e.g., "Texas")
+
+  // ── ALDF Rankings ──
+  aldfRank              Int?     @map("aldf_rank")     // 1-50
+  aldfTier              String?  @map("aldf_tier")     // "Top Tier", "Middle Tier", "Bottom Tier"
+  aldfYear              Int?     @map("aldf_year")     // Report year (e.g., 2025)
+  aldfUrl               String?  @map("aldf_url")      // e.g., "https://aldf.org/state/texas"
+
+  // ── Shelter-Relevant Policies ──
+  mandatoryReporting       Boolean? @map("mandatory_reporting")        // State requires shelter stats reporting?
+  reportingBody            String?  @map("reporting_body")             // e.g., "VDACS", "NCDA&CS"
+  reportingUrl             String?  @map("reporting_url")              // URL to reporting portal
+  holdingPeriodDays        Int?     @map("holding_period_days")        // Min days before euthanasia
+  spayNeuterRequired       Boolean? @map("spay_neuter_required")      // Required before adoption?
+  breedSpecificLegislation Boolean? @map("breed_specific_legislation") // BSL exists?
+  bslDetails               String?  @map("bsl_details")               // What breeds / what restrictions
+  vetCrueltyReporting      Boolean? @map("vet_cruelty_reporting")     // Vets must report cruelty?
+  crossReporting           Boolean? @map("cross_reporting")           // Animal ↔ child abuse cross-reporting?
+  catDeclawingBan          Boolean? @map("cat_declawing_ban")
+  cosmeticsTestingBan      Boolean? @map("cosmetics_testing_ban")
+  policyNotes              String?  @map("policy_notes")              // Free-text notes
+
+  // ── Metadata ──
+  lastScrapedAt         DateTime? @map("last_scraped_at")
+  createdAt             DateTime  @default(now()) @map("created_at")
+  updatedAt             DateTime  @updatedAt @map("updated_at")
+
+  @@map("state_policies")
+}
+
+model ShelterFinancials {
+  id                  String   @id @default(uuid())
+  shelterId           String   @unique @map("shelter_id")
+  ein                 String?                              // IRS EIN (e.g., "59-0624410")
+  nteeCode            String?  @map("ntee_code")           // NTEE classification (e.g., "D200")
+  taxPeriod           Int?     @map("tax_period")           // Most recent tax year (e.g., 2022)
+
+  // ── Latest Filing Summary ──
+  totalRevenue        Int?     @map("total_revenue")
+  totalExpenses       Int?     @map("total_expenses")
+  totalAssets         Int?     @map("total_assets")
+  totalLiabilities    Int?     @map("total_liabilities")
+  netAssets           Int?     @map("net_assets")
+  contributions       Int?                                  // Donations/grants received
+  programRevenue      Int?     @map("program_revenue")      // Revenue from programs (adoptions, clinic, etc.)
+  fundraisingExpense  Int?     @map("fundraising_expense")
+  officerCompensation Int?     @map("officer_compensation")
+
+  // ── Full Filing History (all available years) ──
+  filingHistory       Json?    @map("filing_history")       // Array of {year, revenue, expenses, assets, ...}
+
+  // ── Metadata ──
+  proPublicaUrl       String?  @map("propublica_url")
+  lastScrapedAt       DateTime? @map("last_scraped_at")
+  createdAt           DateTime  @default(now()) @map("created_at")
+  updatedAt           DateTime  @updatedAt @map("updated_at")
+
+  shelter Shelter @relation(fields: [shelterId], references: [id])
+
+  @@map("shelter_financials")
+}
+
+model Feedback {
+  id        String   @id @default(uuid())
+  firstName String   @map("first_name")
+  email     String?
+  note      String
+  createdAt DateTime @default(now()) @map("created_at")
+
+  @@map("feedback")
+}
+
+model BreederInspection {
+  id                 String   @id @default(uuid())
+  certNumber         String   @map("cert_number")         // USDA license number
+  licenseType        String   @map("license_type")        // A=Breeder, B=Dealer
+  legalName          String   @map("legal_name")
+  siteName           String?  @map("site_name")
+  city               String?
+  state              String
+  zipCode            String?  @map("zip_code")
+  inspectionDate     DateTime @map("inspection_date")
+  inspectionType     String?  @map("inspection_type")     // ROUTINE, FOCUSED, etc.
+  criticalViolations Int      @default(0) @map("critical_violations")
+  nonCritical        Int      @default(0) @map("non_critical")
+  animalCount        Int?     @map("animal_count")        // pdf_animals_total
+  latitude           Float?
+  longitude          Float?
+  lastScrapedAt      DateTime @default(now()) @map("last_scraped_at")
+
+  @@unique([certNumber, inspectionDate])
+  @@index([state])
+  @@map("breeder_inspections")
+}
+
+// ── PetAlert: Lost/Found pet matching alerts ──
+model PetAlert {
+  id              String          @id @default(uuid())
+  type            PetAlertType
+  status          PetAlertStatus  @default(ACTIVE)
+  species         Species         @default(DOG)
+  breed           String?
+  name            String?                               // Pet name (if known)
+  description     String?
+  photoUrl        String?         @map("photo_url")
+  photoEmbedding  Float[]         @default([]) @map("photo_embedding")
+  embeddingModel  String?         @map("embedding_model")
+
+  // Location
+  latitude        Float?
+  longitude       Float?
+  locationText    String?         @map("location_text")  // "Near Main St, Austin TX"
+  radiusMiles     Float           @default(25) @map("radius_miles")
+
+  // Contact
+  contactEmail    String          @map("contact_email")
+  contactPhone    String?         @map("contact_phone")
+  contactName     String?         @map("contact_name")
+
+  // Matching
+  matchCount      Int             @default(0) @map("match_count")
+
+  // Lifecycle
+  expiresAt       DateTime        @map("expires_at")     // Auto-expire after 30 days
+  deactivatedAt   DateTime?       @map("deactivated_at")
+  createdAt       DateTime        @default(now()) @map("created_at")
+  updatedAt       DateTime        @updatedAt @map("updated_at")
+
+  @@index([status, species])
+  @@index([expiresAt])
+  @@map("pet_alerts")
+}
+
+enum PetAlertType {
+  LOST
+  FOUND
+}
+
+enum PetAlertStatus {
+  ACTIVE
+  MATCHED
+  EXPIRED
+  DEACTIVATED
+}

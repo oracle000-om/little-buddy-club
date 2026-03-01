@@ -1,0 +1,306 @@
+/* ============================================
+   DETAIL PAGE — Animal Profile
+   ============================================ */
+
+.detail-page {
+    padding: var(--space-xl) 0 var(--space-3xl);
+}
+
+.detail-back {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-xs);
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    margin-bottom: var(--space-lg);
+    transition: color var(--transition-fast);
+}
+
+.detail-back:hover {
+    color: var(--color-primary);
+}
+
+/* --- Photo Gallery --- */
+.detail-gallery {
+    border-radius: var(--radius-xl);
+    overflow: hidden;
+    margin-bottom: var(--space-xl);
+    aspect-ratio: 16 / 9;
+    max-height: 500px;
+    background: var(--color-bg-raised);
+    position: relative;
+}
+
+.detail-gallery img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.detail-gallery__thumbs {
+    display: flex;
+    gap: var(--space-sm);
+    margin-top: var(--space-sm);
+    overflow-x: auto;
+    padding-bottom: var(--space-sm);
+}
+
+.detail-gallery__thumb {
+    width: 80px;
+    height: 60px;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    cursor: pointer;
+    border: 2px solid transparent;
+    transition: border-color var(--transition-fast);
+    flex-shrink: 0;
+}
+
+.detail-gallery__thumb--active {
+    border-color: var(--color-primary);
+}
+
+.detail-gallery__thumb img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+/* --- Header --- */
+.detail-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.detail-header__name {
+    font-size: var(--font-size-4xl);
+    font-weight: 800;
+    color: var(--color-text);
+    line-height: 1.1;
+}
+
+.detail-header__breed {
+    font-size: var(--font-size-lg);
+    color: var(--color-text-muted);
+    font-weight: 500;
+    margin-top: var(--space-xs);
+}
+
+.detail-header__cta {
+    display: inline-flex;
+    align-items: center;
+    gap: var(--space-sm);
+    padding: var(--space-md) var(--space-xl);
+    background: var(--color-accent);
+    color: white;
+    border-radius: var(--radius-lg);
+    font-size: var(--font-size-base);
+    font-weight: 700;
+    text-decoration: none;
+    transition: background var(--transition-fast), transform var(--transition-fast);
+    white-space: nowrap;
+}
+
+.detail-header__cta:hover {
+    background: #E87A5A;
+    color: white;
+    transform: translateY(-2px);
+}
+
+/* --- Info Grid --- */
+.detail-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.detail-card {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: var(--border-card);
+    padding: var(--space-lg);
+}
+
+.detail-card__title {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    color: var(--color-primary);
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    margin-bottom: var(--space-md);
+}
+
+.detail-card__row {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid rgba(74, 156, 168, 0.05);
+}
+
+.detail-card__row:last-child {
+    border-bottom: none;
+}
+
+.detail-card__label {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 500;
+}
+
+.detail-card__value {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    text-align: right;
+}
+
+/* --- Rescue Context Panel --- */
+.rescue-context {
+    background: var(--color-rescue-bg);
+    border: 1px solid rgba(78, 205, 196, 0.2);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.rescue-context__header {
+    display: flex;
+    align-items: center;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.rescue-context__icon {
+    font-size: 1.5rem;
+}
+
+.rescue-context__title {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    color: #2A9D8F;
+}
+
+.rescue-context__text {
+    color: var(--color-text);
+    font-size: var(--font-size-sm);
+    line-height: 1.7;
+}
+
+/* --- Description --- */
+.detail-description {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: var(--border-card);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+}
+
+.detail-description__title {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    margin-bottom: var(--space-md);
+}
+
+.detail-description__text {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-base);
+    line-height: 1.8;
+    white-space: pre-line;
+}
+
+/* --- Shelter Card --- */
+.detail-shelter {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: var(--border-card);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-xl);
+}
+
+.detail-shelter__name {
+    font-size: var(--font-size-xl);
+    font-weight: 800;
+    margin-bottom: var(--space-xs);
+}
+
+.detail-shelter__location {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-md);
+}
+
+.detail-shelter__stats {
+    display: flex;
+    gap: var(--space-lg);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.detail-shelter__stat-value {
+    font-weight: 700;
+    color: var(--color-text);
+}
+
+/* --- Tags / Compatibility --- */
+.detail-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+}
+
+.detail-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: var(--space-xs) var(--space-md);
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.detail-tag--yes {
+    background: var(--color-mint-bg);
+    color: #2A9D8F;
+}
+
+.detail-tag--no {
+    background: rgba(255, 140, 105, 0.1);
+    color: #CC6B50;
+}
+
+.detail-tag--info {
+    background: var(--color-bg-raised);
+    color: var(--color-text-muted);
+}
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+    .detail-header {
+        flex-direction: column;
+        gap: var(--space-md);
+    }
+
+    .detail-header__name {
+        font-size: var(--font-size-3xl);
+    }
+
+    .detail-header__cta {
+        width: 100%;
+        justify-content: center;
+    }
+
+    .detail-gallery {
+        border-radius: var(--radius-lg);
+        aspect-ratio: 4/3;
+    }
+
+    .detail-info {
+        grid-template-columns: 1fr;
+    }
+}

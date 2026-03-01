@@ -1,0 +1,175 @@
+/* ============================================
+   MILL WATCH — Inspection Data
+   ============================================ */
+
+.mill-watch {
+    padding: var(--space-xl) 0 var(--space-3xl);
+}
+
+.mill-watch__header {
+    margin-bottom: var(--space-xl);
+}
+
+.mill-watch__title {
+    font-size: var(--font-size-3xl);
+    font-weight: 800;
+    margin-bottom: var(--space-sm);
+}
+
+.mill-watch__subtitle {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-lg);
+    max-width: 700px;
+}
+
+/* --- Filter Row --- */
+.mill-watch__filters {
+    display: flex;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-xl);
+}
+
+.mill-watch__select {
+    padding: var(--space-sm) var(--space-lg);
+    border: 2px solid rgba(74, 156, 168, 0.12);
+    border-radius: var(--radius-md);
+    font-family: var(--font-sans);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text);
+    background: var(--color-bg-card);
+    cursor: pointer;
+    outline: none;
+}
+
+.mill-watch__select:focus {
+    border-color: var(--color-primary);
+}
+
+/* --- Inspection Cards --- */
+.inspection-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
+    gap: var(--space-lg);
+}
+
+.inspection-card {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: var(--border-card);
+    padding: var(--space-lg);
+    transition: box-shadow var(--transition-base);
+}
+
+.inspection-card:hover {
+    box-shadow: var(--shadow-hover);
+}
+
+.inspection-card__name {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    margin-bottom: var(--space-xs);
+    color: var(--color-text);
+}
+
+.inspection-card__location {
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    margin-bottom: var(--space-md);
+}
+
+.inspection-card__meta {
+    display: flex;
+    flex-wrap: wrap;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-md);
+}
+
+.inspection-card__tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 3px 10px;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+}
+
+.inspection-card__tag--critical {
+    background: rgba(255, 100, 100, 0.12);
+    color: #CC4444;
+}
+
+.inspection-card__tag--warning {
+    background: var(--color-healing-bg);
+    color: #B89A3A;
+}
+
+.inspection-card__tag--info {
+    background: var(--color-bg-raised);
+    color: var(--color-text-muted);
+}
+
+.inspection-card__details {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: var(--space-sm);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.inspection-card__detail-label {
+    font-weight: 500;
+}
+
+.inspection-card__detail-value {
+    font-weight: 700;
+    color: var(--color-text);
+    text-align: right;
+}
+
+/* --- State Policy Sidebar --- */
+.policy-card {
+    background: var(--color-bg-card);
+    border-radius: var(--radius-lg);
+    border: var(--border-card);
+    padding: var(--space-lg);
+    margin-bottom: var(--space-lg);
+}
+
+.policy-card__title {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    margin-bottom: var(--space-md);
+    color: var(--color-primary);
+}
+
+.policy-card__row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-sm) 0;
+    border-bottom: 1px solid rgba(74, 156, 168, 0.05);
+    font-size: var(--font-size-sm);
+}
+
+.policy-card__row:last-child {
+    border-bottom: none;
+}
+
+/* --- Empty State --- */
+.mill-watch__empty {
+    text-align: center;
+    padding: var(--space-3xl);
+    color: var(--color-text-muted);
+}
+
+/* --- Mobile --- */
+@media (max-width: 768px) {
+    .inspection-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .mill-watch__title {
+        font-size: var(--font-size-2xl);
+    }
+}
