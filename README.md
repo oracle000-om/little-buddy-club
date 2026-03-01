@@ -4,7 +4,7 @@
 
 Little Buddy Club is a consumer adoption platform focused on puppies, kittens, and animals rescued from adverse conditions — breeding mills, cruelty confiscations, hoarding cases. It's the younger sibling of [Golden Years Club](https://goldenyears.club) (senior animals) and part of the same ecosystem as [Sniff](https://sniffhome.org) (lost pet reunification).
 
-**Live:** [littlebuddy.club](https://littlebuddy.club)
+**Domain:** `littlebuddy.club` (reserved, not yet deployed)
 
 ## The Ecosystem
 
