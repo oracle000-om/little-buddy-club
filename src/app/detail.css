@@ -77,8 +77,9 @@
 }
 
 .detail-header__name {
+    font-family: var(--font-display);
     font-size: var(--font-size-4xl);
-    font-weight: 800;
+    font-weight: 400;
     color: var(--color-text);
     line-height: 1.1;
 }
@@ -106,7 +107,7 @@
 }
 
 .detail-header__cta:hover {
-    background: #E87A5A;
+    background: #B56E42;
     color: white;
     transform: translateY(-2px);
 }
@@ -140,7 +141,7 @@
     justify-content: space-between;
     align-items: flex-start;
     padding: var(--space-sm) 0;
-    border-bottom: 1px solid rgba(74, 156, 168, 0.05);
+    border-bottom: 1px solid rgba(30, 35, 40, 0.05);
 }
 
 .detail-card__row:last-child {
@@ -163,7 +164,7 @@
 /* --- Rescue Context Panel --- */
 .rescue-context {
     background: var(--color-rescue-bg);
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    border: 1px solid rgba(58, 175, 169, 0.15);
     border-radius: var(--radius-lg);
     padding: var(--space-lg);
     margin-bottom: var(--space-xl);
@@ -183,13 +184,23 @@
 .rescue-context__title {
     font-size: var(--font-size-lg);
     font-weight: 800;
-    color: #2A9D8F;
+    color: #2A8F84;
 }
 
 .rescue-context__text {
     color: var(--color-text);
     font-size: var(--font-size-sm);
     line-height: 1.7;
+}
+
+/* Parent variant — warmer rose tint */
+.rescue-context--parent {
+    background: rgba(180, 90, 100, 0.06);
+    border-color: rgba(180, 90, 100, 0.12);
+}
+
+.rescue-context--parent .rescue-context__title {
+    color: #A05060;
 }
 
 /* --- Description --- */
@@ -266,7 +277,7 @@
 
 .detail-tag--yes {
     background: var(--color-mint-bg);
-    color: #2A9D8F;
+    color: #2A8F84;
 }
 
 .detail-tag--no {

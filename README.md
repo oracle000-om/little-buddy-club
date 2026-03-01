@@ -64,7 +64,7 @@ npm run dev
 |-------|-------------|
 | `/` | Homepage — hero, stats, featured animals, search/filter listings |
 | `/animal/[id]` | Animal detail — photo gallery, rescue context, compatibility, shelter info |
-| `/mill-watch` | USDA breeder inspections + state policy rankings (LBC-unique) |
+| `/mill-watch` | Aggregate USDA inspection data + state policy rankings (LBC-unique) |
 | `/about` | Mission, ecosystem, how it works |
 
 ## Key Files

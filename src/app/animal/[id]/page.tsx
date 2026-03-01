@@ -1,8 +1,8 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getAnimalById, getAnimalForMetadata } from '@/lib/queries';
+import { getAnimalById, getAnimalForMetadata, getNearbyBreeders } from '@/lib/queries';
 import { SafeImage } from '@/components/SafeImage';
-import { toTitleCase, formatAge, formatIntakeReason, getRescueBadge, formatAgeSegment, formatDaysInShelter, formatShelterLocation, cleanDisplayText, getSaveRate, buildShelterMapUrl } from '@/lib/utils';
+import { cleanAnimalName, toTitleCase, formatAge, formatIntakeReason, getRescueBadge, formatAgeSegment, formatDaysInShelter, formatShelterLocation, cleanDisplayText, getSaveRate, buildShelterMapUrl } from '@/lib/utils';
 import { notFound } from 'next/navigation';
 
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }): Promise<Metadata> {
@@ -10,7 +10,7 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
     const animal = await getAnimalForMetadata(id);
     if (!animal) return { title: 'Animal Not Found — Little Buddy Club' };
 
-    const name = toTitleCase(animal.name || 'Unknown');
+    const name = cleanAnimalName(animal.name);
     const breed = toTitleCase(animal.breed || 'Unknown Breed');
     const shelter = animal.shelter?.name || '';
     const title = `${name} — ${breed} | Little Buddy Club`;
@@ -29,9 +29,9 @@ export default async function AnimalDetailPage({ params }: { params: Promise<{ i
 
     if (!animal) notFound();
 
-    const name = toTitleCase(animal.name || 'Unknown');
+    const name = cleanAnimalName(animal.name);
     const breed = toTitleCase(animal.breed || 'Unknown Breed');
-    const badge = getRescueBadge(animal.intakeReason);
+    const badge = getRescueBadge(animal.intakeReason, animal.ageSegment);
     const intakeLabel = formatIntakeReason(animal.intakeReason, animal.intakeReasonDetail);
     const ageLabel = formatAge(
         animal.ageKnownYears,
@@ -45,6 +45,16 @@ export default async function AnimalDetailPage({ params }: { params: Promise<{ i
     const description = cleanDisplayText(listing?.description ?? null);
     const saveRate = animal.shelter ? getSaveRate(animal.shelter.totalIntakeAnnual, animal.shelter.totalEuthanizedAnnual) : null;
     const mapUrl = animal.shelter ? buildShelterMapUrl(animal.shelter) : null;
+
+    // Breeder proximity — fetch nearby breeders with violations
+    let nearbyBreeders: Awaited<ReturnType<typeof getNearbyBreeders>> = [];
+    try {
+        if (animal.shelter?.latitude && animal.shelter?.longitude) {
+            nearbyBreeders = await getNearbyBreeders(animal.shelter.latitude, animal.shelter.longitude);
+        }
+    } catch {
+        // Non-critical — silently skip if breeder data unavailable
+    }
 
     return (
         <div className="detail-page">
@@ -103,17 +113,20 @@ export default async function AnimalDetailPage({ params }: { params: Promise<{ i
                 </div>
 
                 {/* Rescue Context Panel */}
-                {animal.intakeReason === 'CONFISCATE' && (
-                    <div className="rescue-context">
+                {(animal.intakeReason === 'CONFISCATE' || animal.intakeReason.startsWith('CONFISCATE_')) && (
+                    <div className={`rescue-context ${badge?.variant === 'parent' ? 'rescue-context--parent' : ''}`}>
                         <div className="rescue-context__header">
-                            <span className="rescue-context__icon">🛡️</span>
-                            <h2 className="rescue-context__title">Rescue Story</h2>
+                            <span className="rescue-context__icon">{badge?.emoji || '🛡️'}</span>
+                            <h2 className="rescue-context__title">
+                                {badge?.variant === 'parent' ? 'Survivor Story' : 'Rescue Story'}
+                            </h2>
                         </div>
                         <p className="rescue-context__text">
-                            {name} was rescued from adverse conditions — potentially a breeding mill, cruelty case, or hoarding situation.
-                            {intakeLabel && ` Intake reason: ${intakeLabel}.`}
-                            {animal.intakeReasonDetail && ` ${animal.intakeReasonDetail}`}
-                            {' '}Animals from these situations often need extra patience and love as they learn to trust people.
+                            {badge?.variant === 'parent' ? (
+                                <>{name} is a survivor — likely a former breeding animal rescued from a commercial operation. Parents like {name} have spent their lives producing litters in conditions no animal should endure. Now free, they deserve a loving home where they can finally just be a dog.{animal.intakeReasonDetail && ` ${animal.intakeReasonDetail}`} These animals may be shy at first, but with patience and care they blossom into the most grateful companions you&#39;ll ever meet.</>
+                            ) : (
+                                <>{name} was rescued from adverse conditions — potentially a breeding mill, cruelty case, or hoarding situation.{intakeLabel && ` Intake reason: ${intakeLabel}.`}{animal.intakeReasonDetail && ` ${animal.intakeReasonDetail}`} Animals from these situations often need extra patience and love as they learn to trust people.</>
+                            )}
                         </p>
                     </div>
                 )}
@@ -255,6 +268,37 @@ export default async function AnimalDetailPage({ params }: { params: Promise<{ i
                             {animal.shelter.phone && (
                                 <div>📞 {animal.shelter.phone}</div>
                             )}
+                        </div>
+                    </div>
+                )}
+
+                {/* Breeder Proximity Panel */}
+                {nearbyBreeders.length > 0 && (
+                    <div className="breeder-proximity">
+                        <h3 className="breeder-proximity__title">🔍 Nearby Breeders with Violations</h3>
+                        <div className="breeder-proximity__list">
+                            {nearbyBreeders.map(b => (
+                                <div key={b.certNumber} className="breeder-proximity__item">
+                                    <div>
+                                        <span className="breeder-proximity__name">{b.legalName}</span>
+                                        <span className="breeder-proximity__distance">
+                                            {' · '}{Math.round(b.distanceMiles)} mi away
+                                        </span>
+                                    </div>
+                                    <div className="breeder-proximity__violations">
+                                        {b.totalCritical > 0 && (
+                                            <span className="inspection-card__tag inspection-card__tag--critical">
+                                                ⚠️ {b.totalCritical}
+                                            </span>
+                                        )}
+                                        {b.totalNonCritical > 0 && (
+                                            <span className="inspection-card__tag inspection-card__tag--warning">
+                                                {b.totalNonCritical}
+                                            </span>
+                                        )}
+                                    </div>
+                                </div>
+                            ))}
                         </div>
                     </div>
                 )}

@@ -85,7 +85,7 @@ export async function getFilteredAnimals(filters: AnimalFilters): Promise<Pagina
     if (filters.rescue && filters.rescue !== 'all') {
         if (filters.rescue === 'mill') {
             (where.AND as Record<string, unknown>[]).push({
-                intakeReason: 'CONFISCATE',
+                intakeReason: { in: ['CONFISCATE', 'CONFISCATE_MILL', 'CONFISCATE_HOARDING', 'CONFISCATE_CRUELTY'] },
             });
         } else if (filters.rescue === 'stray') {
             (where.AND as Record<string, unknown>[]).push({ intakeReason: 'STRAY' });

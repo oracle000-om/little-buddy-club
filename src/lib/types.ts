@@ -47,9 +47,7 @@ export interface Animal {
     ageKnownYears: number | null;
     ageSegment: 'PUPPY' | 'YOUNG' | 'ADULT' | 'SENIOR' | 'UNKNOWN';
     ageSource: 'SHELTER_REPORTED' | 'CV_ESTIMATED' | 'UNKNOWN';
-    detectedBreeds: string[];
-    breedConfidence: 'HIGH' | 'MEDIUM' | 'LOW' | 'NONE';
-    intakeReason: 'OWNER_SURRENDER' | 'STRAY' | 'OWNER_DECEASED' | 'CONFISCATE' | 'RETURN' | 'TRANSFER' | 'INJURED' | 'OTHER' | 'UNKNOWN';
+    intakeReason: 'OWNER_SURRENDER' | 'STRAY' | 'OWNER_DECEASED' | 'CONFISCATE' | 'CONFISCATE_MILL' | 'CONFISCATE_HOARDING' | 'CONFISCATE_CRUELTY' | 'RETURN' | 'TRANSFER' | 'INJURED' | 'OTHER' | 'UNKNOWN';
     intakeReasonDetail: string | null;
     intakeDate: Date | null;
     notes: string | null;
@@ -137,22 +135,20 @@ export interface Source {
     scrapedAt: Date;
 }
 
-export interface BreederInspection {
-    id: string;
-    certNumber: string;
-    licenseType: string;
-    legalName: string;
-    siteName: string | null;
-    city: string | null;
+export interface MillWatchStateStats {
     state: string;
-    zipCode: string | null;
-    inspectionDate: Date;
-    inspectionType: string | null;
-    criticalViolations: number;
-    nonCritical: number;
-    animalCount: number | null;
-    latitude: number | null;
-    longitude: number | null;
+    totalInspections: number;
+    totalCritical: number;
+    totalNonCritical: number;
+    totalAnimals: number;
+    avgAnimalsPerFacility: number;
+    facilitiesWithViolations: number;
+    totalFacilities: number;
+    // Breakdown by license type
+    breederFacilities: number;   // License type A
+    dealerFacilities: number;    // License type B (pet stores)
+    breederCritical: number;
+    dealerCritical: number;
 }
 
 export interface StatePolicy {
@@ -171,6 +167,11 @@ export interface StatePolicy {
     bslDetails: string | null;
     vetCrueltyReporting: boolean | null;
     crossReporting: boolean | null;
+    catDeclawingBan: boolean | null;
+    cosmeticsTestingBan: boolean | null;
+    beagleBill: boolean | null;
+    beagleBillYear: number | null;
+    beagleBillDetails: string | null;
     policyNotes: string | null;
 }
 
@@ -198,4 +199,68 @@ export interface AnimalWithShelterAndSources extends Animal {
 export interface ShelterWithAnimals extends Shelter {
     animals: Animal[];
     financials?: ShelterFinancials | null;
+}
+
+// ─── Expanded Data Source Types ──────────────────────────
+
+export interface ResearchFacility {
+    id: string;
+    certNumber: string;
+    name: string;
+    state: string;
+    city: string | null;
+    totalDogs: number;
+    totalCats: number;
+    totalAnimals: number;
+    painCategoryC: number;      // pain w/ drugs
+    painCategoryD: number;      // pain w/o drugs
+    painCategoryE: number;      // no pain
+    reportYear: number;
+}
+
+export interface ResearchFacilityStateStats {
+    state: string;
+    totalFacilities: number;
+    totalDogs: number;
+    totalCats: number;
+    totalPainD: number;         // highest-concern pain category
+}
+
+export interface ShelterIntakeStats {
+    id: string;
+    state: string;
+    month: number;
+    year: number;
+    intakeDogs: number;
+    intakeCats: number;
+    surrenderCount: number;
+    strayCount: number;
+    seizureCount: number;
+    euthDogs: number;
+    euthCats: number;
+    liveReleaseRate: number | null;
+}
+
+export interface ConfiscationEvent {
+    id: string;
+    state: string;
+    county: string | null;
+    date: Date;
+    animalCount: number;
+    species: string[];
+    chargeType: string | null;
+    narrative: string | null;
+    sourceUrl: string | null;
+}
+
+export interface HousingPressure {
+    id: string;
+    county: string;
+    state: string;
+    year: number;
+    medianRent: number | null;
+    rentChangeYoY: number | null;
+    evictionRate: number | null;
+    shelterIntakeChange: number | null;
+    correlationScore: number | null;
 }

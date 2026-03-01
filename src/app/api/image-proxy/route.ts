@@ -1,34 +1,15 @@
 /**
  * Image Proxy — Little Buddy Club
  * Proxies shelter animal photos to avoid hotlinking issues.
+ * Accepts any HTTPS image URL — validates response content-type.
  */
 import { NextRequest, NextResponse } from 'next/server';
-
-const ALLOWED_DOMAINS = [
-    'dl5zpyw5k3jeb.cloudfront.net',
-    'g.petango.com',
-    '24petconnect.com',
-    'www.shelterluv.com',
-    'cdn.shelterluv.com',
-    'cdn.rescuegroups.org',
-    'images.petango.com',
-    'www.sanantonio.gov',
-    'www.sdhumane.org',
-    'animalfoundation.com',
-    'countypets.com',
-    'photos.adoptapet.com',
-    'daccanimalimagesprod.blob.core.windows.net',
-    'petadoption.ocpetinfo.com',
-    'dbw3zep4prcju.cloudfront.net',
-    'psl.petfinder.com',
-    'photos.petfinder.com',
-    'media.adoptapet.com',
-];
 
 function isAllowedUrl(url: string): boolean {
     try {
         const parsed = new URL(url);
-        return ALLOWED_DOMAINS.some(d => parsed.hostname === d || parsed.hostname.endsWith(`.${d}`));
+        // Only allow HTTPS (or HTTP for legacy shelter sites)
+        return parsed.protocol === 'https:' || parsed.protocol === 'http:';
     } catch {
         return false;
     }
@@ -42,7 +23,7 @@ export async function GET(request: NextRequest) {
     }
 
     if (!isAllowedUrl(url)) {
-        return NextResponse.json({ error: 'Domain not allowed' }, { status: 403 });
+        return NextResponse.json({ error: 'Invalid URL' }, { status: 403 });
     }
 
     try {

@@ -1,5 +1,5 @@
 /* ============================================
-   MILL WATCH — Inspection Data
+   MILL WATCH — Industry Transparency
    ============================================ */
 
 .mill-watch {
@@ -11,8 +11,9 @@
 }
 
 .mill-watch__title {
+    font-family: var(--font-display);
     font-size: var(--font-size-3xl);
-    font-weight: 800;
+    font-weight: 400;
     margin-bottom: var(--space-sm);
 }
 
@@ -22,69 +23,57 @@
     max-width: 700px;
 }
 
-/* --- Filter Row --- */
-.mill-watch__filters {
-    display: flex;
-    gap: var(--space-sm);
-    margin-bottom: var(--space-xl);
-}
-
-.mill-watch__select {
-    padding: var(--space-sm) var(--space-lg);
-    border: 2px solid rgba(74, 156, 168, 0.12);
-    border-radius: var(--radius-md);
-    font-family: var(--font-sans);
-    font-size: var(--font-size-sm);
-    font-weight: 600;
-    color: var(--color-text);
+/* Intro explainer */
+.mill-watch__intro {
     background: var(--color-bg-card);
-    cursor: pointer;
-    outline: none;
-}
-
-.mill-watch__select:focus {
-    border-color: var(--color-primary);
-}
-
-/* --- Inspection Cards --- */
-.inspection-grid {
-    display: grid;
-    grid-template-columns: repeat(auto-fill, minmax(340px, 1fr));
-    gap: var(--space-lg);
-}
-
-.inspection-card {
-    background: var(--color-bg-card);
-    border-radius: var(--radius-lg);
     border: var(--border-card);
-    padding: var(--space-lg);
-    transition: box-shadow var(--transition-base);
+    border-radius: var(--radius-lg);
+    padding: var(--space-xl);
+    margin-bottom: var(--space-xl);
+    box-shadow: var(--shadow-card);
 }
 
-.inspection-card:hover {
-    box-shadow: var(--shadow-hover);
-}
-
-.inspection-card__name {
-    font-size: var(--font-size-lg);
-    font-weight: 800;
-    margin-bottom: var(--space-xs);
+.mill-watch__intro-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 400;
+    margin-bottom: var(--space-md);
     color: var(--color-text);
 }
 
-.inspection-card__location {
+.mill-watch__intro-text {
     color: var(--color-text-muted);
     font-size: var(--font-size-sm);
+    line-height: 1.7;
+    max-width: 680px;
     margin-bottom: var(--space-md);
 }
 
-.inspection-card__meta {
+.mill-watch__intro-text:last-of-type {
+    margin-bottom: var(--space-lg);
+}
+
+.mill-watch__violations-key {
     display: flex;
-    flex-wrap: wrap;
+    flex-direction: column;
     gap: var(--space-sm);
-    margin-bottom: var(--space-md);
+    padding-top: var(--space-md);
+    border-top: var(--border-subtle);
 }
 
+.mill-watch__violation-def {
+    display: flex;
+    align-items: center;
+    gap: var(--space-md);
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+}
+
+.mill-watch__violation-def .inspection-card__tag {
+    flex-shrink: 0;
+}
+
+/* --- Violation Tags (reused in intro) --- */
 .inspection-card__tag {
     display: inline-flex;
     align-items: center;
@@ -96,80 +85,285 @@
 }
 
 .inspection-card__tag--critical {
-    background: rgba(255, 100, 100, 0.12);
-    color: #CC4444;
+    background: rgba(200, 60, 60, 0.1);
+    color: #B83A3A;
 }
 
 .inspection-card__tag--warning {
     background: var(--color-healing-bg);
-    color: #B89A3A;
+    color: #A88A2F;
 }
 
-.inspection-card__tag--info {
-    background: var(--color-bg-raised);
-    color: var(--color-text-muted);
+/* ============================================
+   INTERACTIVE US MAP
+   ============================================ */
+
+.us-map-container {
+    margin-top: var(--space-lg);
 }
 
-.inspection-card__details {
-    display: grid;
-    grid-template-columns: 1fr 1fr;
-    gap: var(--space-sm);
-    font-size: var(--font-size-sm);
-    color: var(--color-text-muted);
-}
-
-.inspection-card__detail-label {
-    font-weight: 500;
-}
-
-.inspection-card__detail-value {
-    font-weight: 700;
-    color: var(--color-text);
-    text-align: right;
-}
-
-/* --- State Policy Sidebar --- */
-.policy-card {
-    background: var(--color-bg-card);
-    border-radius: var(--radius-lg);
-    border: var(--border-card);
-    padding: var(--space-lg);
+/* --- Data Layer Toggle --- */
+.us-map__toggle {
+    display: flex;
+    gap: var(--space-xs);
     margin-bottom: var(--space-lg);
+    background: var(--color-bg-card);
+    border: var(--border-card);
+    border-radius: var(--radius-full);
+    padding: 4px;
+    width: fit-content;
 }
 
-.policy-card__title {
-    font-size: var(--font-size-lg);
-    font-weight: 800;
+.us-map__toggle-btn {
+    padding: var(--space-sm) var(--space-lg);
+    border: none;
+    border-radius: var(--radius-full);
+    background: transparent;
+    color: var(--color-text-muted);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.2s;
+}
+
+.us-map__toggle-btn:hover {
+    color: var(--color-text);
+}
+
+.us-map__toggle-btn--active {
+    background: var(--color-primary);
+    color: white;
+    box-shadow: var(--shadow-card);
+}
+
+/* --- National Summary Stats --- */
+.us-map__summary {
+    display: flex;
+    gap: var(--space-md);
+    margin-bottom: var(--space-xl);
+    flex-wrap: wrap;
+}
+
+.us-map__stat {
+    flex: 1;
+    min-width: 120px;
+    background: var(--color-bg-card);
+    border: var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg) var(--space-md);
+    text-align: center;
+    box-shadow: var(--shadow-card);
+}
+
+.us-map__stat-value {
+    font-family: var(--font-display);
+    font-size: var(--font-size-2xl);
+    font-weight: 400;
+    color: var(--color-text);
+    margin-bottom: var(--space-xs);
+}
+
+.us-map__stat-value--critical {
+    color: #B83A3A;
+}
+
+.us-map__stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    text-transform: uppercase;
+    letter-spacing: 0.03em;
+    font-weight: 600;
+}
+
+/* --- Map + Panel Layout --- */
+.us-map__layout {
+    display: grid;
+    grid-template-columns: 1fr 340px;
+    gap: var(--space-xl);
+    align-items: start;
+}
+
+.us-map__map-wrap {
+    background: var(--color-bg-card);
+    border: var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-card);
+}
+
+.us-map__svg {
+    width: 100%;
+    height: auto;
+}
+
+/* --- Legend --- */
+.us-map__legend {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-sm);
+    margin-top: var(--space-md);
+}
+
+.us-map__legend-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: 600;
+}
+
+.us-map__legend-bar {
+    display: flex;
+    gap: 2px;
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.us-map__legend-bar>div {
+    width: 32px;
+    height: 14px;
+}
+
+/* --- State Detail Panel --- */
+.us-map__panel {
+    background: var(--color-bg-card);
+    border: var(--border-card);
+    border-radius: var(--radius-lg);
+    padding: var(--space-lg);
+    box-shadow: var(--shadow-card);
+    position: sticky;
+    top: 80px;
+}
+
+.us-map__panel-title {
+    font-family: var(--font-display);
+    font-size: var(--font-size-xl);
+    font-weight: 400;
     margin-bottom: var(--space-md);
     color: var(--color-primary);
 }
 
-.policy-card__row {
-    display: flex;
-    justify-content: space-between;
-    padding: var(--space-sm) 0;
-    border-bottom: 1px solid rgba(74, 156, 168, 0.05);
-    font-size: var(--font-size-sm);
+.us-map__panel-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr;
+    gap: var(--space-sm);
+    margin-bottom: var(--space-lg);
 }
 
-.policy-card__row:last-child {
+.us-map__panel-stat {
+    text-align: center;
+    padding: var(--space-sm);
+    background: var(--color-bg-raised);
+    border-radius: var(--radius-md);
+}
+
+.us-map__panel-stat--critical .us-map__panel-stat-value {
+    color: #B83A3A;
+}
+
+.us-map__panel-stat-value {
+    font-size: var(--font-size-lg);
+    font-weight: 800;
+    color: var(--color-text);
+    display: block;
+}
+
+.us-map__panel-stat-label {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: 600;
+    display: block;
+}
+
+/* --- Breeder/Pet Store Breakdown --- */
+.us-map__panel-breakdown {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-xs);
+    padding: var(--space-md) 0;
+    border-top: var(--border-subtle);
+    border-bottom: var(--border-subtle);
+    margin-bottom: var(--space-md);
+}
+
+.us-map__panel-breakdown-row {
+    display: flex;
+    justify-content: space-between;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-muted);
+    padding: var(--space-xs) 0;
+}
+
+.us-map__panel-breakdown-row span:first-child {
+    font-weight: 600;
+    color: var(--color-text);
+}
+
+/* --- Policy Sub-panel --- */
+.us-map__panel-policy {
+    margin-top: var(--space-md);
+}
+
+.us-map__panel-policy-title {
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    margin-bottom: var(--space-sm);
+    color: var(--color-text);
+}
+
+.us-map__panel-row {
+    display: flex;
+    justify-content: space-between;
+    padding: var(--space-xs) 0;
+    border-bottom: 1px solid rgba(30, 35, 40, 0.05);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+.us-map__panel-row:last-child {
     border-bottom: none;
 }
 
-/* --- Empty State --- */
-.mill-watch__empty {
+/* --- Empty Panel State --- */
+.us-map__panel-empty {
     text-align: center;
-    padding: var(--space-3xl);
+    padding: var(--space-xl) var(--space-md);
     color: var(--color-text-muted);
+}
+
+.us-map__panel-empty-icon {
+    font-size: var(--font-size-3xl);
+    margin-bottom: var(--space-md);
+}
+
+.us-map__panel-empty p {
+    font-size: var(--font-size-sm);
+    line-height: 1.6;
 }
 
 /* --- Mobile --- */
 @media (max-width: 768px) {
-    .inspection-grid {
+    .us-map__layout {
         grid-template-columns: 1fr;
+    }
+
+    .us-map__panel {
+        position: static;
     }
 
     .mill-watch__title {
         font-size: var(--font-size-2xl);
+    }
+
+    .us-map__summary {
+        gap: var(--space-sm);
+    }
+
+    .us-map__stat {
+        min-width: 100px;
+        padding: var(--space-md) var(--space-sm);
+    }
+
+    .us-map__stat-value {
+        font-size: var(--font-size-xl);
     }
 }

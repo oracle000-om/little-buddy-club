@@ -1,23 +1,22 @@
 import Link from 'next/link';
 import type { Metadata } from 'next';
-import { getFilteredAnimals, getDistinctStates, getSuggestions, getLBCStats, getFeaturedAnimals } from '@/lib/queries';
+import { getFilteredAnimals, getDistinctStates, getSuggestions, getLBCStats } from '@/lib/queries';
 import { parseSearchQuery } from '@/lib/search-parser';
 import { FilterBar } from './listings/filter-bar';
 import { SearchBar } from './listings/search-bar';
 import { AnimalGrid } from './listings/animal-grid';
 import { Pagination } from './listings/pagination';
-import { SafeImage } from '@/components/SafeImage';
-import { toTitleCase } from '@/lib/utils';
+import { cleanAnimalName } from '@/lib/utils';
 import type { SearchSuggestion, PaginatedResult } from '@/lib/queries';
 
 export const dynamic = 'force-dynamic';
 
 export const metadata: Metadata = {
-    title: 'Little Buddy Club — Adopt a Puppy or Kitten',
-    description: 'Browse puppies, kittens, and animals rescued from breeding mills, cruelty cases, and adverse conditions. Give a little buddy a fresh start.',
+    title: 'Little Buddy Club — Adopt a Puppy, Kitten, or Mill Survivor',
+    description: 'Browse puppies, kittens, and animals rescued from commercial breeding. Meet mill parents looking for their first real home. Give a little buddy a fresh start.',
     openGraph: {
         title: 'Little Buddy Club',
-        description: 'Give every puppy and kitten from hard places a fighting chance.',
+        description: 'Every little buddy deserves a chance — adopt a puppy, kitten, or mill survivor.',
         type: 'website',
         siteName: 'Little Buddy Club',
     },
@@ -47,15 +46,13 @@ export default async function Home({
     let states: string[] = [];
     let suggestions: SearchSuggestion[] = [];
     let stats = { totalAnimals: 0, totalShelters: 0, totalStates: 0 };
-    let featured: Awaited<ReturnType<typeof getFeaturedAnimals>> = [];
     let error = false;
 
     try {
-        [result, states, stats, featured] = await Promise.all([
+        [result, states, stats] = await Promise.all([
             getFilteredAnimals(params),
             getDistinctStates(),
             getLBCStats(),
-            getFeaturedAnimals(6),
         ]);
 
         if (result.animals.length === 0 && params.q?.trim()) {
@@ -96,10 +93,10 @@ export default async function Home({
                     <>
                         <section className="hero">
                             <h1 className="hero__title">
-                                Every little buddy deserves a <span>fresh start</span>
+                                Every little buddy deserves a <span>chance</span>
                             </h1>
                             <p className="hero__subtitle">
-                                Browse puppies, kittens, and animals rescued from breeding mills and cruelty cases. Find your new best friend.
+                                Puppies, kittens, and survivors of mills, labs, hoarding, dogfighting, and unlicensed breeders — all in one place.
                             </p>
                             <div className="hero__stats">
                                 <div className="hero__stat">
@@ -116,27 +113,6 @@ export default async function Home({
                                 </div>
                             </div>
                         </section>
-
-                        {featured.length > 0 && (
-                            <section className="featured">
-                                {featured.map((animal) => (
-                                    <Link key={animal.id} href={`/animal/${animal.id}`} className="featured__card">
-                                        <SafeImage
-                                            src={animal.photoUrl ? `/api/image-proxy?url=${encodeURIComponent(animal.photoUrl)}` : ''}
-                                            alt={animal.name || 'Featured animal'}
-                                            fill
-                                            sizes="(max-width: 768px) 50vw, 200px"
-                                            style={{ objectFit: 'cover' }}
-                                            unoptimized
-                                        />
-                                        <div className="featured__overlay">
-                                            <div className="featured__name">{toTitleCase(animal.name || 'Unknown')}</div>
-                                            <div className="featured__breed">{toTitleCase(animal.breed || '')}</div>
-                                        </div>
-                                    </Link>
-                                ))}
-                            </section>
-                        )}
                     </>
                 )}
 
@@ -145,7 +121,7 @@ export default async function Home({
                 </div>
 
                 <p className="listings-header__description">
-                    Puppies, kittens, and rescue animals looking for their forever homes.
+                    Puppies, kittens, and rescued survivors — all looking for their forever homes.
                 </p>
 
                 <SearchBar />

@@ -18,6 +18,22 @@ export function toTitleCase(str: string): string {
     ).join(' ');
 }
 
+/** Clean animal name for display — strips asterisks, status suffixes, IDs. */
+export function cleanAnimalName(name: string | null): string {
+    if (!name) return 'Unknown';
+    let cleaned = name.trim();
+    // Strip leading/trailing asterisks (shelter markup)
+    cleaned = cleaned.replace(/^\*+|\*+$/g, '');
+    // Strip common suffixes like "- At shelter", "- foster", "- adopted"
+    cleaned = cleaned.replace(/\s*-\s*(at shelter|in foster|foster|adopted|hold|pending|rescue|available|urgent|medical).*$/i, '');
+    // Strip trailing IDs like "A650448"
+    if (/^[A-Z]\d{4,}$/.test(cleaned)) return 'Unknown';
+    // Clean up
+    cleaned = cleaned.trim();
+    if (!cleaned || cleaned.length < 2) return 'Unknown';
+    return toTitleCase(cleaned);
+}
+
 /** Format shelter location for display. */
 export function formatShelterLocation(
     shelter: { county?: string | null; state?: string | null; zipCode?: string | null },
@@ -101,6 +117,9 @@ export function formatDaysInShelter(days: number | null): string | null {
 export function formatIntakeReason(reason: string, detail: string | null): string | null {
     const labels: Record<string, string> = {
         CONFISCATE: 'Rescued from adverse conditions',
+        CONFISCATE_MILL: 'Rescued from a breeding operation',
+        CONFISCATE_HOARDING: 'Rescued from a hoarding situation',
+        CONFISCATE_CRUELTY: 'Rescued from a cruelty case',
         STRAY: 'Found as a stray',
         OWNER_SURRENDER: 'Owner surrender',
         OWNER_DECEASED: "Owner's passing",
@@ -114,10 +133,19 @@ export function formatIntakeReason(reason: string, detail: string | null): strin
 }
 
 /** Get a rescue badge label + emoji for display on cards. */
-export function getRescueBadge(intakeReason: string): { emoji: string; label: string; variant: string } | null {
+export function getRescueBadge(
+    intakeReason: string,
+    ageSegment?: string | null,
+): { emoji: string; label: string; variant: string } | null {
+    // Confiscation sub-types (future: CONFISCATE_MILL, CONFISCATE_HOARDING, CONFISCATE_CRUELTY)
+    if (intakeReason === 'CONFISCATE' || intakeReason.startsWith('CONFISCATE_')) {
+        const isParent = ageSegment === 'ADULT' || ageSegment === 'SENIOR';
+        if (isParent) {
+            return { emoji: '💔', label: 'Parent', variant: 'parent' };
+        }
+        return { emoji: '🛡️', label: 'Mill Rescue', variant: 'rescue' };
+    }
     switch (intakeReason) {
-        case 'CONFISCATE':
-            return { emoji: '🛡️', label: 'Rescued', variant: 'rescue' };
         case 'STRAY':
             return { emoji: '🐾', label: 'Found Stray', variant: 'stray' };
         case 'INJURED':

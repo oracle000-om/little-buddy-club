@@ -13,14 +13,22 @@
  * will naturally graduate to PUPPY/YOUNG/ADULT/SENIOR and
  * adult/senior animals will drop off LBC automatically.
  */
+import { IntakeReason } from '@/generated/prisma';
+
+const CONFISCATION_REASONS: IntakeReason[] = [
+    IntakeReason.CONFISCATE,
+    IntakeReason.CONFISCATE_MILL,
+    IntakeReason.CONFISCATE_HOARDING,
+    IntakeReason.CONFISCATE_CRUELTY,
+];
+
 export function buildLBCClause() {
     return {
         OR: [
             { ageSegment: 'PUPPY' as const },
             { ageSegment: 'YOUNG' as const },
             { ageSegment: 'UNKNOWN' as const },
-            // eslint-disable-next-line @typescript-eslint/no-explicit-any
-            { intakeReason: 'CONFISCATE' as const },
+            { intakeReason: { in: CONFISCATION_REASONS } },
         ],
     };
 }

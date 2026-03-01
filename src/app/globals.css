@@ -42,20 +42,20 @@ body:has(.staging-banner) .header {
   --color-text-muted: #6B5F56;
   --color-text-dim: #9C918A;
 
-  --color-primary: #2D7A86;
-  --color-primary-light: #3D9DAC;
-  --color-primary-dark: #1E5A64;
-  --color-primary-glow: rgba(45, 122, 134, 0.1);
+  --color-primary: #4A9BA6;
+  --color-primary-light: #6BB5BF;
+  --color-primary-dark: #357A84;
+  --color-primary-glow: rgba(74, 155, 166, 0.1);
 
-  --color-accent: #C97D4E;
-  --color-accent-light: #DDA070;
-  --color-accent-glow: rgba(201, 125, 78, 0.1);
+  --color-accent: #B85C3A;
+  --color-accent-light: #CF7A5A;
+  --color-accent-glow: rgba(184, 92, 58, 0.1);
 
   --color-mint: #3AAFA9;
   --color-mint-light: #5EC4BF;
   --color-mint-bg: rgba(58, 175, 169, 0.08);
 
-  --color-coral: #C97D4E;
+  --color-coral: #B85C3A;
   --color-lavender: #8B7DB8;
   --color-sky: #6BA3C2;
   --color-sunny: #D4A838;
@@ -198,12 +198,12 @@ img {
   font-family: var(--font-display);
   font-size: var(--font-size-2xl);
   font-weight: 400;
-  color: var(--color-primary);
+  color: var(--color-accent);
   letter-spacing: -0.01em;
 }
 
 .header__logo-text span {
-  color: var(--color-accent);
+  color: var(--color-primary);
 }
 
 .header__nav {

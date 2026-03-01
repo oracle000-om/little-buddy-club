@@ -44,7 +44,7 @@
 .search-bar__input {
     flex: 1;
     padding: var(--space-sm) var(--space-lg);
-    border: 2px solid rgba(74, 156, 168, 0.15);
+    border: 2px solid rgba(30, 35, 40, 0.08);
     border-radius: var(--radius-lg);
     font-family: var(--font-sans);
     font-size: var(--font-size-base);
@@ -95,7 +95,7 @@
 
 .filter-bar__select {
     padding: var(--space-xs) var(--space-md);
-    border: 2px solid rgba(74, 156, 168, 0.12);
+    border: 2px solid rgba(30, 35, 40, 0.06);
     border-radius: var(--radius-md);
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
@@ -114,7 +114,7 @@
 
 .filter-bar__zip {
     padding: var(--space-xs) var(--space-md);
-    border: 2px solid rgba(74, 156, 168, 0.12);
+    border: 2px solid rgba(30, 35, 40, 0.06);
     border-radius: var(--radius-md);
     font-family: var(--font-sans);
     font-size: var(--font-size-sm);
@@ -189,26 +189,32 @@
 
 .animal-card__badge--rescue {
     background: var(--color-rescue-bg);
-    color: #2A9D8F;
-    border: 1px solid rgba(78, 205, 196, 0.2);
+    color: #2A8F84;
+    border: 1px solid rgba(58, 175, 169, 0.15);
 }
 
 .animal-card__badge--stray {
     background: var(--color-stray-bg);
-    color: #4A90B8;
-    border: 1px solid rgba(135, 206, 235, 0.2);
+    color: #4A80A0;
+    border: 1px solid rgba(107, 163, 194, 0.15);
 }
 
 .animal-card__badge--healing {
     background: var(--color-healing-bg);
-    color: #B89A3A;
-    border: 1px solid rgba(255, 224, 102, 0.3);
+    color: #A88A2F;
+    border: 1px solid rgba(229, 197, 75, 0.2);
 }
 
 .animal-card__badge--transfer {
     background: var(--color-transfer-bg);
-    color: #7B68AE;
-    border: 1px solid rgba(184, 169, 232, 0.2);
+    color: #6B5EA0;
+    border: 1px solid rgba(139, 125, 184, 0.15);
+}
+
+.animal-card__badge--parent {
+    background: rgba(180, 90, 100, 0.1);
+    color: #A05060;
+    border: 1px solid rgba(180, 90, 100, 0.15);
 }
 
 .animal-card__species {
@@ -309,7 +315,7 @@
 }
 
 .empty-state__suggestion:hover {
-    background: rgba(74, 156, 168, 0.2);
+    background: rgba(45, 122, 134, 0.15);
 }
 
 /* --- Error State --- */
@@ -366,7 +372,7 @@
     min-width: 40px;
     height: 40px;
     padding: 0 var(--space-md);
-    border: 2px solid rgba(74, 156, 168, 0.12);
+    border: 2px solid rgba(30, 35, 40, 0.06);
     border-radius: var(--radius-md);
     background: var(--color-bg-card);
     color: var(--color-text);
@@ -401,8 +407,9 @@
 }
 
 .hero__title {
+    font-family: var(--font-display);
     font-size: var(--font-size-hero);
-    font-weight: 800;
+    font-weight: 400;
     color: var(--color-text);
     line-height: 1.1;
     margin-bottom: var(--space-md);

@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { SafeImage } from '@/components/SafeImage';
-import { toTitleCase, formatAge, formatDaysInShelter, getRescueBadge, formatAgeSegment } from '@/lib/utils';
+import { cleanAnimalName, toTitleCase, formatDaysInShelter, getRescueBadge, formatAgeSegment } from '@/lib/utils';
 import type { AnimalResult } from '@/lib/queries';
 
 interface AnimalGridProps {
@@ -23,7 +23,7 @@ export function AnimalGrid({ animals, totalCount, page, totalPages }: AnimalGrid
             </p>
             <div className="animal-grid">
                 {animals.map((animal) => {
-                    const badge = getRescueBadge(animal.intakeReason);
+                    const badge = getRescueBadge(animal.intakeReason, animal.ageSegment);
                     const photoSrc = animal.photoUrl
                         ? `/api/image-proxy?url=${encodeURIComponent(animal.photoUrl)}`
                         : null;
@@ -64,7 +64,7 @@ export function AnimalGrid({ animals, totalCount, page, totalPages }: AnimalGrid
 
                             <div className="animal-card__body">
                                 <div className="animal-card__name">
-                                    {toTitleCase(animal.name || 'Unknown')}
+                                    {cleanAnimalName(animal.name)}
                                 </div>
                                 <div className="animal-card__breed">
                                     {toTitleCase(animal.breed || 'Unknown Breed')}
