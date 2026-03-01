@@ -264,3 +264,36 @@ export interface HousingPressure {
     shelterIntakeChange: number | null;
     correlationScore: number | null;
 }
+
+// ─── New Data Source Types ────────────────────────────────
+
+export interface PuppyImportStats {
+    originCountry: string;
+    totalDogs: number;
+    totalPuppies: number;
+    reportYear: number;
+}
+
+export interface CrueltyRegistryStats {
+    state: string;
+    jurisdiction: string | null;
+    registrySource: string;
+    activeEntries: number;
+    fightingCount: number;
+    crueltyCount: number;
+}
+
+export interface PetStoreBanStats {
+    state: string;
+    statewideban: boolean;
+    municipalBanCount: number;
+    speciesCovered: string[];
+}
+
+export interface AkcBreedRanking {
+    breedName: string;
+    rank: number;
+    reportYear: number;
+    priorYearRank: number | null;
+    registrations: number | null;
+}

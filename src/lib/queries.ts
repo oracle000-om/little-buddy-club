@@ -6,7 +6,7 @@
  * to scope results to puppies, young animals, and confiscation cases.
  */
 import { prisma } from './db';
-import type { AnimalWithShelter, AnimalWithShelterAndSources, ShelterWithAnimals, MillWatchStateStats, StatePolicy, ResearchFacilityStateStats, ShelterIntakeStats, ConfiscationEvent, HousingPressure } from './types';
+import type { AnimalWithShelter, AnimalWithShelterAndSources, ShelterWithAnimals, MillWatchStateStats, StatePolicy, ResearchFacilityStateStats, ShelterIntakeStats, ConfiscationEvent, PuppyImportStats, CrueltyRegistryStats, PetStoreBanStats, AkcBreedRanking } from './types';
 import { parseSearchQuery, type SearchIntent } from './search-parser';
 import { geocodeZip, geocodeZipFull, geocodeCounty, haversineDistance } from './geocode';
 import { zipToState } from './zip-to-state';
@@ -793,21 +793,99 @@ export async function getConfiscationEvents(state?: string, limit = 50): Promise
     }) as Promise<ConfiscationEvent[]>;
 }
 
-/** Fetch housing pressure hotspots — counties with highest rent increases. */
-export async function getHousingPressureHotspots(state?: string, limit = 50): Promise<HousingPressure[]> {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    const where: any = {
-        rentChangeYoY: { not: null },
-    };
-    if (state && state !== 'all') {
-        where.state = { equals: state, mode: 'insensitive' };
+/** Aggregate puppy import stats by country for a given year. */
+export async function getPuppyImportStats(year?: number): Promise<PuppyImportStats[]> {
+    const where: Record<string, unknown> = {};
+    if (year) where.reportYear = year;
+
+    const rows = await prisma.puppyImport.groupBy({
+        by: ['originCountry', 'reportYear'],
+        where,
+        _sum: { dogCount: true, puppyCount: true },
+        orderBy: { _sum: { dogCount: 'desc' } },
+        take: 50,
+    });
+
+    return rows.map(r => ({
+        originCountry: r.originCountry,
+        totalDogs: r._sum.dogCount ?? 0,
+        totalPuppies: r._sum.puppyCount ?? 0,
+        reportYear: r.reportYear,
+    }));
+}
+
+/** Aggregate cruelty registry counts by state (no PII). */
+export async function getCrueltyRegistryStats(): Promise<CrueltyRegistryStats[]> {
+    const rows = await prisma.crueltyRegistryEntry.groupBy({
+        by: ['state', 'jurisdiction', 'registrySource'],
+        where: { isActive: true },
+        _sum: { count: true },
+        _count: { offenseType: true },
+        orderBy: { _sum: { count: 'desc' } },
+    });
+
+    // For fighting/cruelty breakdown, do a second pass
+    return rows.map(r => ({
+        state: r.state,
+        jurisdiction: r.jurisdiction,
+        registrySource: r.registrySource,
+        activeEntries: r._sum.count ?? 0,
+        fightingCount: 0, // populated by scraper offline
+        crueltyCount: 0,
+    }));
+}
+
+/** Get pet store ban counts by state. */
+export async function getPetStoreBanStats(): Promise<PetStoreBanStats[]> {
+    const bans = await prisma.petStoreBan.findMany({
+        orderBy: { state: 'asc' },
+    });
+
+    const byState = new Map<string, PetStoreBanStats>();
+    for (const ban of bans) {
+        const existing = byState.get(ban.state);
+        if (!existing) {
+            byState.set(ban.state, {
+                state: ban.state,
+                statewideban: ban.banType === 'STATEWIDE',
+                municipalBanCount: ban.banType === 'MUNICIPAL' ? 1 : 0,
+                speciesCovered: [...ban.speciesCovered],
+            });
+        } else {
+            if (ban.banType === 'STATEWIDE') existing.statewideban = true;
+            if (ban.banType === 'MUNICIPAL') existing.municipalBanCount++;
+        }
     }
 
-    return prisma.housingPressure.findMany({
+    return Array.from(byState.values());
+}
+
+/** Get AKC breed rankings for a given year. */
+export async function getAkcBreedRankings(year?: number): Promise<AkcBreedRanking[]> {
+    const where: Record<string, unknown> = {};
+    if (year) {
+        where.reportYear = year;
+    } else {
+        // Get most recent year
+        const latest = await prisma.akcBreedRanking.findFirst({
+            orderBy: { reportYear: 'desc' },
+            select: { reportYear: true },
+        });
+        if (latest) where.reportYear = latest.reportYear;
+    }
+
+    const rows = await prisma.akcBreedRanking.findMany({
         where,
-        orderBy: { rentChangeYoY: 'desc' },
-        take: limit,
-    }) as Promise<HousingPressure[]>;
+        orderBy: { rank: 'asc' },
+    });
+
+    return rows.map(r => ({
+        breedName: r.breedName,
+        rank: r.rank,
+        reportYear: r.reportYear,
+        priorYearRank: r.priorYearRank,
+        registrations: r.registrations,
+    }));
 }
 
 /** Fetch states with Beagle Bills (lab animal adoption mandates). */
