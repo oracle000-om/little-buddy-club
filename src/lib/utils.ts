@@ -198,3 +198,77 @@ export function buildShelterMapUrl(
     }
     return null;
 }
+
+// ─── CV Assessment Helpers ───────────────────────────────
+
+/**
+ * Get the best available age as a single number.
+ * Known age from shelter is trusted first. CV midpoint is the fallback.
+ */
+export function getBestAge(
+    knownYears: number | null,
+    estimatedLow: number | null,
+    estimatedHigh: number | null,
+): { age: number; source: 'shelter' | 'estimated' } | null {
+    if (knownYears !== null) {
+        return { age: knownYears, source: 'shelter' };
+    }
+    if (estimatedLow !== null && estimatedHigh !== null) {
+        return { age: Math.round((estimatedLow + estimatedHigh) / 2), source: 'estimated' };
+    }
+    return null;
+}
+
+/**
+ * Calculate expected "Next Chapter" years from age + breed life expectancy.
+ * Uses range-against-range computation instead of collapsing to a midpoint.
+ */
+export function formatNextChapterYears(
+    ageKnownYears: number | null,
+    ageEstimatedLow: number | null,
+    ageEstimatedHigh: number | null,
+    lifeExpLow: number | null,
+    lifeExpHigh: number | null,
+): { text: string; isRange: boolean; isValid: boolean } {
+    if (lifeExpLow === null || lifeExpHigh === null) return { text: '', isRange: false, isValid: false };
+
+    // Build the best age range from all available data
+    let ageLow: number | null = null;
+    let ageHigh: number | null = null;
+
+    if (ageKnownYears !== null && ageEstimatedLow !== null && ageEstimatedHigh !== null) {
+        // Both sources: union (widest range) for maximum honesty
+        ageLow = Math.min(ageKnownYears, ageEstimatedLow);
+        ageHigh = Math.max(ageKnownYears, ageEstimatedHigh);
+    } else if (ageEstimatedLow !== null && ageEstimatedHigh !== null) {
+        ageLow = ageEstimatedLow;
+        ageHigh = ageEstimatedHigh;
+    } else if (ageKnownYears !== null) {
+        ageLow = ageKnownYears;
+        ageHigh = ageKnownYears;
+    }
+
+    if (ageLow === null || ageHigh === null) return { text: '', isRange: false, isValid: false };
+
+    // Range-against-range: best case vs worst case
+    const roundHalf = (n: number) => Math.round(n * 2) / 2;
+    const remainingLow = roundHalf(Math.max(0, lifeExpLow - ageHigh));   // worst case
+    const remainingHigh = roundHalf(Math.max(0, lifeExpHigh - ageLow));  // best case
+
+    if (remainingHigh === 0) return { text: 'near end of expected lifespan', isRange: false, isValid: true };
+
+    const fmt = (n: number) => `${n}`;
+    if (remainingLow === remainingHigh) return { text: `${fmt(remainingLow)} years`, isRange: false, isValid: true };
+    if (remainingLow === 0) return { text: `up to ${fmt(remainingHigh)} years`, isRange: true, isValid: true };
+    return { text: `${fmt(remainingLow)}–${fmt(remainingHigh)} years`, isRange: true, isValid: true };
+}
+
+/**
+ * Format a list of detected breeds as a Primary / Secondary / Tertiary string.
+ */
+export function formatBreedAssessment(detectedBreeds: string[] | null | undefined): string {
+    if (!detectedBreeds || detectedBreeds.length === 0) {
+        return 'Pending';
+    }
+    return detectedBreeds.slice(0, 3).map(b => toTitleCase(b)).join(' / ');
+}

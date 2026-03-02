@@ -2,6 +2,7 @@ import Link from 'next/link';
 import type { Metadata } from 'next';
 import { getAnimalById, getAnimalForMetadata, getNearbyBreeders } from '@/lib/queries';
 import { SafeImage } from '@/components/SafeImage';
+import { NextChapterCard } from '@/components/next-chapter-card';
 import { cleanAnimalName, toTitleCase, formatAge, formatIntakeReason, getRescueBadge, formatAgeSegment, formatDaysInShelter, formatShelterLocation, cleanDisplayText, getSaveRate, buildShelterMapUrl } from '@/lib/utils';
 import { notFound } from 'next/navigation';
 
@@ -130,6 +131,9 @@ export default async function AnimalDetailPage({ params }: { params: Promise<{ i
                         </p>
                     </div>
                 )}
+
+                {/* Their Next Chapter */}
+                <NextChapterCard assessment={animal.assessment} ageKnownYears={animal.ageKnownYears} name={name} />
 
                 {/* Info Grid */}
                 <div className="detail-info">

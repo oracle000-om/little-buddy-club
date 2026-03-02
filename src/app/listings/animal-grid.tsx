@@ -70,6 +70,11 @@ export function AnimalGrid({ animals, totalCount, page, totalPages }: AnimalGrid
                                     {toTitleCase(animal.breed || 'Unknown Breed')}
                                 </div>
                                 <div className="animal-card__meta">
+                                    {animal.assessment && (
+                                        <span className="animal-card__tag" style={{ background: 'rgba(234, 219, 200, 0.4)', color: '#B56E42', fontWeight: 700, borderColor: 'rgba(181, 110, 66, 0.2)', borderWidth: 1, borderStyle: 'solid' }}>
+                                            ✨ Evaluated by AI
+                                        </span>
+                                    )}
                                     {animal.ageSegment && animal.ageSegment !== 'UNKNOWN' && (
                                         <span className="animal-card__tag">
                                             {formatAgeSegment(animal.ageSegment)}

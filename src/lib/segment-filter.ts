@@ -13,7 +13,7 @@
  * will naturally graduate to PUPPY/YOUNG/ADULT/SENIOR and
  * adult/senior animals will drop off LBC automatically.
  */
-import { IntakeReason } from '@/generated/prisma';
+import { IntakeReason } from '../generated/prisma/client';
 
 const CONFISCATION_REASONS: IntakeReason[] = [
     IntakeReason.CONFISCATE,

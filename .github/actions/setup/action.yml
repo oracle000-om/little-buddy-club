@@ -28,15 +28,6 @@ runs:
       shell: bash
       run: npm ci
 
-    # Cache generated Prisma client — deterministic based on schema
-    - name: Cache Prisma client
-      id: cache-prisma
-      uses: actions/cache@v4
-      with:
-        path: node_modules/.prisma
-        key: prisma-${{ runner.os }}-${{ hashFiles('prisma/schema.prisma') }}
-
     - name: Generate Prisma client
-      if: steps.cache-prisma.outputs.cache-hit != 'true'
       shell: bash
       run: npx prisma generate
