@@ -8,7 +8,7 @@ import "./mill-watch.css";
 
 export const metadata: Metadata = {
     title: "Little Buddy Club",
-    description: "Puppies, kittens, and survivors of mills, labs, hoarding, dogfighting, and unlicensed breeders — all in one place.",
+    description: "Here, you'll find the young ones who still have a lifetime ahead, as well as their parents who are seeking a fresh start. Little Buddy Club focuses on cats and dogs, especially smaller breeds, who are confiscated from conditions violating federal animal welfare law. These include rescue from puppy mills, lab testing, dogfighting, hoarding, and other conditions.",
     metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'https://littlebuddy.club'),
     openGraph: {
         title: "Little Buddy Club",

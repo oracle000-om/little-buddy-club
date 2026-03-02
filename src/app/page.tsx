@@ -96,7 +96,7 @@ export default async function Home({
                                 Every little buddy deserves a <span>chance</span>
                             </h1>
                             <p className="hero__subtitle">
-                                Puppies, kittens, and survivors of mills, labs, hoarding, dogfighting, and unlicensed breeders — all in one place.
+                                Here, you'll find the young ones who still have a lifetime ahead, as well as their parents who are seeking a fresh start. Little Buddy Club focuses on cats and dogs, especially smaller breeds, who are confiscated from conditions violating federal animal welfare law. These include rescue from puppy mills, lab testing, dogfighting, hoarding, and other conditions.
                             </p>
                             <div className="hero__stats">
                                 <div className="hero__stat">
