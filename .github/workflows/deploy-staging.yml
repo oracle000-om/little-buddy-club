@@ -22,7 +22,7 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    environment: little-buddy-staging
+    environment: 'littlebuddy.club / staging'
     timeout-minutes: 10
     steps:
       - uses: actions/checkout@v4
